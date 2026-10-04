@@ -41,3 +41,38 @@
 - **Consequence:** Preserves pure neutrality in AI prompts and prevents anchoring biases.
 
 D9: Single main branch. Solo, short competition. Work is committed by the developer and pushed once the project is ready.
+
+## D11: Guided Input Flow
+- **Context:** The previous multi-field form showed several equal text boxes at once, leading to overlapping input (facts, doubts, constraints) and feeling like a homework worksheet.
+- **Decision:** Guided input: one question per screen with four data fields (decision, reasons, context, certaintyBefore). The old facts/doubts/constraints fields overlapped and made the form feel like homework. AI follow-up questions will be added later as extra screens only when needed.
+- **Consequence:** Provides a focused, calm interview pace, cleaner data extraction, and an easily extensible screen pipeline.
+
+## D12: Typography Scale
+- **Context:** Small text (12-14px) strained readability and weakened the editorial aesthetic.
+- **Decision:** Type scale: body 17px, inputs 18px, nothing below 15px.
+- **Consequence:** Guarantees effortless readability, meets strict AA contrast across all viewport sizes, and elevates the product's visual presence.
+
+## D13: Structured JSON Schema via generateContent
+- **Context:** Structured, reliable analysis output is required from Gemini without using unstable or changing experimental APIs.
+- **Decision:** Use `ai.models.generateContent` with OpenAPI 3.0 structured JSON schema (`responseMimeType: "application/json"`, `responseSchema`) instead of the experimental Interactions API.
+- **Consequence:** Stable, type-safe execution conforming to official `@google/genai` SDK contracts and strict server validation.
+
+## D14: Server-Assigned IDs and Quote Verification
+- **Context:** The model could hallucinate non-unique identifiers or quote passages not present in user input.
+- **Decision:** Findings returned by the model do not contain IDs; the server assigns IDs sequentially (`r1..`, `f1..`) after validating and verifying quotes against verbatim normalized substrings of the input text. Quotes not found in the input are dropped; findings without surviving quotes are cleanly downgraded to `basis: "inferred"`.
+- **Consequence:** Zero hallucinated quotes reach the user, IDs are deterministic and clean, and findings remain grounded in reality.
+
+## D15: Server-Computed Neutrality Receipt
+- **Context:** Trusting self-reported AI neutrality or unverified compliance can fail silently if the model hallucinates neutrality.
+- **Decision:** The server, not the model, evaluates non-directive compliance via phrase scanning and audits grounding coverage, returning a transparent audit trail (`receipt`) with every analysis response.
+- **Consequence:** Model self-attestation is bypassed; client and auditing systems obtain deterministic proof of compliance and quote grounding.
+
+## D16: Configurable Thinking Level
+- **Context:** Complex human decisions require deliberate, deep reasoning, but latency and cost needs may vary across deployment environments.
+- **Decision:** Pass `ThinkingConfig` with a configurable thinking level (`low`, `medium`, `high`, defaulting to `medium`) to Gemini 2.5 thinking-capable models via `GEMINI_THINKING_LEVEL`.
+- **Consequence:** Ensures thorough, unhurried reasoning across unstated assumptions and cognitive tensions while allowing operational tuning.
+
+## D17: Strict Request and Response Schemas
+- **Context:** Input tampering, accidental leakage of private reflection states (like `certaintyBefore`), or unexpected model keys could corrupt analysis.
+- **Decision:** Input schema is strict (`.strict()`): unknown keys, including `certaintyBefore`, are rejected with HTTP 400. Model output is validated against a strict Zod schema that forbids recommendation, score, or ranking fields.
+- **Consequence:** Ironclad non-directive compliance, complete protection of user reflection privacy, and guaranteed payload integrity.

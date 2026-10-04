@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #fbf9f5;
-  --color-canvas-subtle: #f4efe6;
+  --color-canvas: #faf8f5;
+  --color-canvas-subtle: #f3ede2;
   --color-canvas-card: #ffffff;
   --color-ink: #18263e;
   --color-ink-muted: #4e5e77;
@@ -11,13 +11,13 @@
   --color-amber-accent: #b46b19;
   --color-amber-surface: #fdf7ee;
   --color-amber-border: #ebd1a4;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 :root {
-  --color-canvas: #fbf9f5;
-  --color-canvas-subtle: #f4efe6;
+  --color-canvas: #faf8f5;
+  --color-canvas-subtle: #f3ede2;
   --color-canvas-card: #ffffff;
   --color-ink: #18263e;
   --color-ink-muted: #4e5e77;
@@ -26,14 +26,66 @@
   --color-amber-accent: #b46b19;
   --color-amber-surface: #fdf7ee;
   --color-amber-border: #ebd1a4;
+  font-size: 16px;
 }
 
 body {
-  background-color: #fbf9f5;
+  background-color: #faf8f5;
+  background-image: radial-gradient(rgba(24, 38, 62, 0.07) 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
   color: #18263e;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1.0625rem; /* 17px */
+  line-height: 1.6;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+}
+
+/* Screen transition animations */
+.slide-forward {
+  animation: slideForward 180ms ease-out forwards;
+}
+
+.slide-backward {
+  animation: slideBackward 180ms ease-out forwards;
+}
+
+.panel-fade {
+  animation: panelFade 180ms ease-out forwards;
+}
+
+@keyframes slideForward {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideBackward {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes panelFade {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Accessible focus visible default */

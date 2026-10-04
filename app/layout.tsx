@@ -1,10 +1,30 @@
 import type { Metadata } from "next";
+import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  fallback: ["ui-serif", "Georgia", "Cambria", "Times New Roman", "serif"],
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  fallback: [
+    "system-ui",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    "Segoe UI",
+    "Roboto",
+    "sans-serif",
+  ],
+});
+
 export const metadata: Metadata = {
-  title: "Second Look — We help you think. We don't decide for you.",
+  title: "Second Look: see your decision from where you're not standing",
   description:
-    "An exploratory thinking tool to examine cognitive blind spots, unstated assumptions, and overlooked factors in your decisions.",
+    "Describe a decision and your reasoning. Second Look shows the assumptions and open questions in your thinking, in your own words.",
 };
 
 export default function RootLayout({
@@ -13,28 +33,36 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-[#fbf9f5] text-[#18263e]">
+    <html
+      lang="en"
+      className={`h-full antialiased ${fraunces.variable} ${inter.variable}`}
+    >
+      <body className="min-h-full flex flex-col bg-[#faf8f5] text-[#18263e]">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-[#18263e] focus:text-[#fbf9f5] focus:rounded-md focus:shadow-md focus:ring-2 focus:ring-[#b46b19]"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#18263e] focus:text-[#faf8f5] focus:rounded-md focus:shadow-md focus:ring-2 focus:ring-[#b46b19]"
         >
           Skip to content
         </a>
 
-        <header className="w-full border-b border-[#dbd4c7] bg-[#fbf9f5]/90 backdrop-blur-xs sticky top-0 z-30">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
-              <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#18263e]">
+        {/* Slim App Header */}
+        <header className="w-full border-b border-[#dbd4c7] bg-[#faf8f5]/90 backdrop-blur-xs sticky top-0 z-30">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-7 h-7 rounded-md bg-[#18263e] flex items-center justify-center text-[#faf8f5] font-serif font-bold text-base shadow-2xs select-none"
+                aria-hidden="true"
+              >
+                S
+              </div>
+              <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#18263e]">
                 Second Look
               </span>
-              <span className="text-xs sm:text-sm text-[#4e5e77] sm:border-l sm:border-[#dbd4c7] sm:pl-3">
-                We help you think. We don&apos;t decide for you.
-              </span>
             </div>
+
             <button
               type="button"
-              className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-medium text-[#18263e] bg-transparent border border-[#dbd4c7] rounded-md hover:bg-[#f4efe6] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e]"
+              className="min-h-[44px] px-3.5 py-1.5 text-[15px] sm:text-base font-medium text-[#18263e] bg-transparent border border-[#dbd4c7] rounded-lg hover:bg-[#f3ede2] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] cursor-pointer"
               aria-label="Log in or Sign up (Coming soon)"
             >
               Log in / Sign up
@@ -42,13 +70,15 @@ export default function RootLayout({
           </div>
         </header>
 
-        <main id="main-content" className="flex-1 w-full mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-14">
+        <main id="main-content" className="flex-1 w-full mx-auto max-w-6xl px-4 sm:px-6 py-5 sm:py-8 flex flex-col justify-center">
           {children}
         </main>
 
-        <footer className="w-full border-t border-[#dbd4c7] py-6 px-4 sm:px-6 bg-[#fbf9f5] text-center text-xs text-[#6c7c94] space-y-1">
-          <p>Nothing is saved unless you choose to sign in and save.</p>
-          <p>For reflection, not professional advice.</p>
+        {/* Compact Single-line Footer */}
+        <footer className="w-full border-t border-[#dbd4c7] py-3 px-4 sm:px-6 bg-[#faf8f5]/80 text-center text-[15px] text-[#6c7c94]">
+          <p>
+            For reflection, not professional advice. Nothing is saved unless you sign in and choose Save.
+          </p>
         </footer>
       </body>
     </html>

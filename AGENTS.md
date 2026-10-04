@@ -27,6 +27,12 @@ Next.js App Router, React, TypeScript, Tailwind CSS. Gemini via @google/genai, s
 - Design: calm and editorial, warm off-white, deep ink-blue accent, soft amber highlight, serif headings, no red/green verdict colors.
 Git: use only the main branch. Never create, switch to or push other branches, and never open pull requests. Do not run git commit or git push; the developer does that manually
 - certaintyBefore must never be included in any request to Gemini.
+- README.md must describe only what is implemented. At the end of every phase, update the README feature list, the environment variable list and the Google services status table to match the code.
+- The input flow is one question per screen, defined in a single steps config so follow-up screens can be inserted.
+- No text below 15px; helper text 16px or more.
+- Never read, print, log, copy or modify .env.local or any real secret value. If GEMINI_API_KEY or GEMINI_MODEL are not available when you test, do NOT ask for them and do NOT create .env.local or fake keys. Test everything that does not need Gemini and list the Gemini-dependent checks as "not run: needs key".
+- Server-only code lives in lib/server/ and must never be imported by client components. Client code may only use "import type" from lib/schema.ts.
+- All logging goes through lib/server/logger.ts. No console.log elsewhere.
 ## Commands
 - Dev: npm run dev | Lint: npm run lint | Typecheck: npm run typecheck | Test: npm test | Build: npm run build
 ## End-of-task report (required every time)
