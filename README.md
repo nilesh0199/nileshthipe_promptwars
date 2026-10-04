@@ -22,7 +22,7 @@ People make decisions based on the information most visible to them, frequently 
 - Example loading with inline overwrite confirmation when the user has already entered text.
 - Session persistence: stores the active screen and draft data in browser `sessionStorage` under `second_look_workspace_v2`, cleanly ignoring obsolete or invalid schemas on reload.
 - Analysis route handler (`POST /api/analyze`): strict server validation via Zod, delimiter attack neutralization, structured prompt assembly with decision-type reflection lenses, server-side timeout/retry management, verbatim substring quote verification, basis downgrading (`inferred`), and programmatic neutrality receipts.
-- Developer results preview (`components/DeveloperPreview.tsx`): calm loading view with 2.5s rotating status copy, cancelation via AbortController, error handling with preserves answers, and developer inspection view rendering structured analysis JSON and audit receipt.
+- Production results experience (`components/results/ResultsView.tsx`): 4 accessible tabs ("Findings", "In your words", "Premortem", "Next steps") with grouped finding cards, verbatim grounded quote blocks, bidirectional evidence linking, client-side triage ("Worth investigating", "Already considered", "Not relevant to me"), premortem reflection questions, structural reasoning map, personal synthesis notes, copyable export checklist, neutrality audit receipt, and post-analysis certainty reflection.
 - Accessibility: semantic landmarks (`header`, `main`, `footer`), skip link, 44px minimum touch targets, visible focus indicators, `aria-live` screen reader announcements, radio arrow key navigation, all text at or above 15px (helpers 16px or more), and `prefers-reduced-motion` CSS animation suppression.
 - Health check endpoint: dynamic `GET /api/health` route returning `{ "status": "ok" }` with HTTP 200.
 - Continuous integration: GitHub Actions workflow (`.github/workflows/ci.yml`) validating lint, typecheck, and build on Node.js 22.
@@ -67,12 +67,21 @@ cp .env.example .env.local
 npm run dev
 ```
 
-### Verification Commands
+### Verification & Test Commands
 ```bash
 npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
+
+### Automated Tests
+Automated test suite (`tests/critical-behavior.test.ts`) executed via `npm test` using Node.js's built-in test runner (`node:test`) and `jiti`:
+1. `AnalyzeRequest validation`: strictly rejects `certaintyBefore`, unknown fields, and boundary violations.
+2. `Grounding verification`: matches verbatim spans, assigns sequential IDs, and downgrades hallucinated quotes.
+3. `Guard scan`: detects directive advice in model output and allows tentative exploratory reflection.
+4. `Triage state`: supports mutual exclusivity, tallies summary counts, and tracks user actions.
+5. `Next Steps synthesis`: filters investigation items by triage state and formats exportable notes.
 
 ### Environment Variables
 Environment variables documented in `.env.example`:
@@ -91,18 +100,18 @@ Environment variables documented in `.env.example`:
 ```text
 .github/workflows/   GitHub Actions CI workflow (ci.yml)
 app/                 App Router layout, global styles, page, /api/health, and /api/analyze
-components/          Workspace interview flow, DeveloperPreview, InfoTabs, ProductPreview
+components/          Workspace interview flow, InfoTabs, ProductPreview
+components/results/  Production results view: ResultsView, ResultsHeader, FindingsTab, InYourWordsTab, PremortemTab, NextStepsTab
 docs/                Architecture decisions (decisions.md) and manual test cases (test-inputs.md)
 lib/                 Client schemas, steps configuration, limits, types, and decision configs
 lib/server/          Server-only modules: env, logger, prompt, guard, grounding, gemini, analyze
+tests/               Automated test suite (critical-behavior.test.ts)
 AGENTS.md            Project memory, rules, constraints, and architecture guidelines
 .env.example         Example environment variable template
 ```
 
 ## Not Built Yet
 
-- Results view with interactive findings triage cards and personalized investigation checklist (Phase 4)
 - Optional Google sign-in (Firebase Auth) and cloud saving (Cloud Firestore)
 - Follow-up question generation and dynamic screen insertion
-- Automated test suite (unit and end-to-end tests)
 - Production deployment to Vercel

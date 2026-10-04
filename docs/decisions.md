@@ -76,3 +76,8 @@ D9: Single main branch. Solo, short competition. Work is committed by the develo
 - **Context:** Input tampering, accidental leakage of private reflection states (like `certaintyBefore`), or unexpected model keys could corrupt analysis.
 - **Decision:** Input schema is strict (`.strict()`): unknown keys, including `certaintyBefore`, are rejected with HTTP 400. Model output is validated against a strict Zod schema that forbids recommendation, score, or ranking fields.
 - **Consequence:** Ironclad non-directive compliance, complete protection of user reflection privacy, and guaranteed payload integrity.
+
+## D18: Final Results Experience and Grounded Evidence Linking
+- **Context:** The developer preview JSON needed replacement with a polished, trustworthy results screen allowing users to triage blind spots and formulate personal next steps.
+- **Decision:** Provide four accessible tabs (Findings, In your words, Premortem, Next steps) with client-side mutually exclusive triage ("Worth investigating", "Already considered", "Not relevant"), bidirectional navigation between findings and annotated verbatim evidence spans, personal synthesis textarea, and exportable checklist notes. Saving remains an explicit stub until authentication is built.
+- **Consequence:** Users retain complete agency over their thinking, zero directive advice is given, and every observation remains grounded in the user's verified text.
