@@ -34,9 +34,10 @@ export function getEnv(): ServerEnv {
     errors.push("GEMINI_API_KEY");
   }
 
-  const model = process.env.GEMINI_MODEL?.trim();
+  const rawModel = process.env.GEMINI_MODEL?.trim();
+  const model = rawModel || "gemini-2.5-flash";
   const MODEL_REGEX = /^[a-zA-Z0-9.-]+$/;
-  if (!model || !MODEL_REGEX.test(model)) {
+  if (!MODEL_REGEX.test(model)) {
     errors.push("GEMINI_MODEL");
   }
 
