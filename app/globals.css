@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #fbf9f5;
+  --color-canvas-subtle: #f4efe6;
+  --color-canvas-card: #ffffff;
+  --color-ink: #18263e;
+  --color-ink-muted: #4e5e77;
+  --color-ink-faint: #6c7c94;
+  --color-ink-border: #dbd4c7;
+  --color-amber-accent: #b46b19;
+  --color-amber-surface: #fdf7ee;
+  --color-amber-border: #ebd1a4;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  --color-canvas: #fbf9f5;
+  --color-canvas-subtle: #f4efe6;
+  --color-canvas-card: #ffffff;
+  --color-ink: #18263e;
+  --color-ink-muted: #4e5e77;
+  --color-ink-faint: #6c7c94;
+  --color-ink-border: #dbd4c7;
+  --color-amber-accent: #b46b19;
+  --color-amber-surface: #fdf7ee;
+  --color-amber-border: #ebd1a4;
+}
+
+body {
+  background-color: #fbf9f5;
+  color: #18263e;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Accessible focus visible default */
+*:focus-visible {
+  outline: 2px solid #18263e;
+  outline-offset: 2px;
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
