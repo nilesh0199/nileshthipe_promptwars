@@ -10,7 +10,7 @@ import {
 import { WORKSPACE_SCREENS, FlowScreenConfig } from "@/lib/flow";
 import { LIMITS } from "@/lib/limits";
 import type { AnalyzeResponse } from "@/lib/schema";
-import { DeveloperPreview } from "./DeveloperPreview";
+import { ResultsView } from "./results/ResultsView";
 
 export const STORAGE_KEY = "second_look_workspace_v2";
 
@@ -378,6 +378,22 @@ export function Workspace({ onExit }: WorkspaceProps) {
 
   const headingId = `screen-heading-${currentScreen.id}`;
 
+  if (analysisStatus === "success" && analysisResult) {
+    return (
+      <ResultsView
+        data={analysisResult}
+        originalInput={{
+          decision: formData.decision,
+          reasons: formData.reasons,
+          context: formData.context,
+          certaintyBefore: formData.certaintyBefore,
+        }}
+        onBackToAnswers={() => setAnalysisStatus("idle")}
+        onStartOver={resetEverything}
+      />
+    );
+  }
+
   return (
     <div className="w-full max-w-3xl mx-auto py-2 sm:py-4">
       {/* Visually hidden live region for screen announcements */}
@@ -453,14 +469,6 @@ export function Workspace({ onExit }: WorkspaceProps) {
               </button>
             </div>
           </div>
-        )}
-
-        {analysisStatus === "success" && analysisResult && (
-          <DeveloperPreview
-            data={analysisResult}
-            onBack={() => setAnalysisStatus("idle")}
-            onStartOver={resetEverything}
-          />
         )}
 
         {analysisStatus === "idle" && (
