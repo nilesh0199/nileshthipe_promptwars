@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Project: Second Look
+# Project: Perspectra
 ## What this product does
 A web app for the problem statement "The Blind Spot". A user describes a decision and their reasoning; Gemini returns a structured, non-directive analysis of unstated assumptions, overlooked factors, internal tensions, missing information, alternative perspectives, and premortem questions. Every finding is grounded in the user's own words. The user triages each finding and gets a personal investigation checklist. The app is a THINKING TOOL: it never recommends, ranks, scores or decides. Guests can use everything; logging in (Google) only adds saving.
 
@@ -33,8 +33,11 @@ Git: use only the main branch. Never create, switch to or push other branches, a
 - Never read, print, log, copy or modify .env.local or any real secret value. If GEMINI_API_KEY or GEMINI_MODEL are not available when you test, do NOT ask for them and do NOT create .env.local or fake keys. Test everything that does not need Gemini and list the Gemini-dependent checks as "not run: needs key".
 - Server-only code lives in lib/server/ and must never be imported by client components. Client code may only use "import type" from lib/schema.ts.
 - All logging goes through lib/server/logger.ts. No console.log elsewhere.
+- Firestore access only through lib/saved.ts; every document carries the owner's uid; rules are owner-only.
+- Every API route must use the shared request guard (method, content type, origin, rate limit, size).
+- Automated tests run via Vitest (`npm test` / `npm run test:coverage`). All tests must be meaningful (no snapshot tests, no `.skip`/`.only`, no asserting only on mocks). Coverage on `lib/**` must meet >= 85% lines and >= 80% branches (excluding `server/gemini.ts` which needs a real key).
 ## Commands
-- Dev: npm run dev | Lint: npm run lint | Typecheck: npm run typecheck | Test: npm test | Build: npm run build
+- Dev: npm run dev | Lint: npm run lint | Typecheck: npm run typecheck | Test: npm test | Test Coverage: npm run test:coverage | Build: npm run build
 ## End-of-task report (required every time)
 Before saying a task is done: run lint, typecheck, tests and build and show the output; list every file changed and why; list anything skipped, stubbed, mocked or hard-coded; list assumptions I should confirm. Do not call work complete if anything fails or is skipped.
 ## Decisions

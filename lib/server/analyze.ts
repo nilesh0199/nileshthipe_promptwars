@@ -1,4 +1,4 @@
-import type { AnalyzeRequest, AnalyzeResponse, ModelAnalysis, Receipt } from "../schema";
+import type { AnalyzeRequest, AnalysisSuccessResponse, ModelAnalysis, Receipt } from "../schema";
 import { ModelAnalysisSchema } from "../schema";
 import { buildSystemInstruction, buildUserPrompt } from "./prompt";
 import { callGemini } from "./gemini";
@@ -153,7 +153,7 @@ function isAbortOrTimeout(err: unknown): boolean {
 export async function analyze(
   input: AnalyzeRequest,
   requestId: string
-): Promise<AnalyzeResponse> {
+): Promise<AnalysisSuccessResponse> {
   const OVERALL_DEADLINE_MS = 28000;
   const startTime = Date.now();
 
@@ -275,6 +275,7 @@ export async function analyze(
   );
 
   return {
+    kind: "analysis",
     analysis: {
       decision_summary: validModelAnalysis.decision_summary,
       reasoning_map: reasoningMap,
@@ -284,5 +285,10 @@ export async function analyze(
       closing_note: validModelAnalysis.closing_note,
     },
     receipt,
+    input: {
+      decision: input.decision,
+      reasons: input.reasons,
+      context: input.context,
+    },
   };
 }

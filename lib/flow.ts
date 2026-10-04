@@ -53,6 +53,6 @@ export const WORKSPACE_SCREENS: FlowScreenConfig[] = [
     field: "certaintyBefore",
     required: false,
     canSkip: true,
-    primaryActionLabel: "See what I might be missing",
+    primaryActionLabel: "Show me another perspective",
   },
 ];

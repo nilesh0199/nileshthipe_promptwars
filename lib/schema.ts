@@ -23,6 +23,7 @@ export const AnalyzeRequestSchema = z
   .strict();
 
 export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
+export type DecisionType = AnalyzeRequest["decisionType"];
 
 // 2. ModelAnalysis Schema (what Gemini must return; no ids)
 export const FindingTypeSchema = z.enum([
@@ -143,10 +144,32 @@ export interface Receipt {
   retried: boolean;
 }
 
-export interface AnalyzeResponse {
+export interface SanitizedInput {
+  decision: string;
+  reasons: string;
+  context: string;
+}
+
+export interface AnalysisSuccessResponse {
+  kind: "analysis";
   analysis: Analysis;
   receipt: Receipt;
+  input: SanitizedInput;
 }
+
+export interface Helpline {
+  name: string;
+  contact: string;
+  note: string;
+}
+
+export interface SupportResponse {
+  kind: "support";
+  message: string;
+  helplines: Helpline[];
+}
+
+export type AnalyzeResponse = AnalysisSuccessResponse | SupportResponse;
 
 export interface ErrorResponse {
   error: {

@@ -1,7 +1,7 @@
 import type { DecisionTypeId } from "./decisionTypes";
 
 export type DecisionInput = {
-  decisionType: DecisionTypeId;
+  decisionType: DecisionTypeId | null;
   decision: string;
   reasons: string;
   context: string;

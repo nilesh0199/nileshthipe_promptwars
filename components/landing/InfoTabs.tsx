@@ -154,7 +154,7 @@ export function InfoTabs({ activeTab, onSelectTab }: InfoTabsProps) {
           >
             <div className="rounded-xl border border-[#dbd4c7] bg-[#ffffff] p-2.5 sm:p-3 space-y-1.5 shadow-2xs">
               <h3 className="text-[16px] font-bold text-[#18263e] pb-1 border-b border-[#f3ede2]">
-                Second Look will
+                Perspectra will
               </h3>
               <ul className="space-y-1 text-[16px] text-[#4e5e77]">
                 <li className="flex items-start gap-1.5">
@@ -174,7 +174,7 @@ export function InfoTabs({ activeTab, onSelectTab }: InfoTabsProps) {
 
             <div className="rounded-xl border border-[#dbd4c7] bg-[#ffffff] p-2.5 sm:p-3 space-y-1.5 shadow-2xs">
               <h3 className="text-[16px] font-bold text-[#18263e] pb-1 border-b border-[#f3ede2]">
-                Second Look never
+                Perspectra never
               </h3>
               <ul className="space-y-1 text-[16px] text-[#4e5e77]">
                 <li className="flex items-start gap-1.5">

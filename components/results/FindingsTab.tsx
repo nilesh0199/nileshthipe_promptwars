@@ -122,7 +122,7 @@ export function FindingsTab({
             </div>
 
             {/* Finding Cards */}
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {groupFindings.map((finding) => {
                 const isSelected = highlightedFindingId === finding.id;
                 const triageState = triageMap[finding.id];
@@ -131,7 +131,7 @@ export function FindingsTab({
                   <article
                     key={finding.id}
                     id={`finding-${finding.id}`}
-                    className={`bg-[#ffffff] rounded-2xl border p-5 sm:p-6 transition-all duration-200 text-left space-y-4 shadow-2xs ${
+                    className={`bg-[#ffffff] rounded-2xl border p-5 sm:p-6 transition-all duration-200 text-left flex flex-col justify-between space-y-4 shadow-2xs ${
                       isSelected
                         ? "border-[#18263e] ring-2 ring-[#18263e]/20"
                         : "border-[#dbd4c7] hover:border-[#b46b19]/60"

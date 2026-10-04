@@ -14,9 +14,17 @@ export interface ServerEnv {
   GEMINI_API_KEY: string;
   GEMINI_MODEL: string;
   GEMINI_THINKING_LEVEL: ThinkingLevelSetting;
+  RATE_LIMIT_MAX: number;
+  RATE_LIMIT_WINDOW_SECONDS: number;
+  RATE_LIMIT_GLOBAL_MAX: number;
+  ALLOWED_ORIGINS: string[];
 }
 
 let cachedEnv: ServerEnv | null = null;
+
+export function resetEnvCacheForTests(): void {
+  cachedEnv = null;
+}
 
 /**
  * Parses process.env lazily on first invocation.
@@ -51,6 +59,44 @@ export function getEnv(): ServerEnv {
     }
   }
 
+  const isProd = process.env.NODE_ENV === "production";
+
+  let rateLimitMax = isProd ? 20 : 120;
+  if (process.env.RATE_LIMIT_MAX) {
+    const parsed = parseInt(process.env.RATE_LIMIT_MAX.trim(), 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      errors.push("RATE_LIMIT_MAX");
+    } else {
+      rateLimitMax = parsed;
+    }
+  }
+
+  let rateLimitWindowSeconds = 600;
+  if (process.env.RATE_LIMIT_WINDOW_SECONDS) {
+    const parsed = parseInt(process.env.RATE_LIMIT_WINDOW_SECONDS.trim(), 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      errors.push("RATE_LIMIT_WINDOW_SECONDS");
+    } else {
+      rateLimitWindowSeconds = parsed;
+    }
+  }
+
+  let rateLimitGlobalMax = 300;
+  if (process.env.RATE_LIMIT_GLOBAL_MAX) {
+    const parsed = parseInt(process.env.RATE_LIMIT_GLOBAL_MAX.trim(), 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      errors.push("RATE_LIMIT_GLOBAL_MAX");
+    } else {
+      rateLimitGlobalMax = parsed;
+    }
+  }
+
+  const allowedOrigins: string[] = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+
   if (errors.length > 0) {
     throw new ConfigError(errors);
   }
@@ -59,6 +105,10 @@ export function getEnv(): ServerEnv {
     GEMINI_API_KEY: apiKey!,
     GEMINI_MODEL: model!,
     GEMINI_THINKING_LEVEL: thinkingLevel,
+    RATE_LIMIT_MAX: rateLimitMax,
+    RATE_LIMIT_WINDOW_SECONDS: rateLimitWindowSeconds,
+    RATE_LIMIT_GLOBAL_MAX: rateLimitGlobalMax,
+    ALLOWED_ORIGINS: allowedOrigins,
   };
 
   return cachedEnv;

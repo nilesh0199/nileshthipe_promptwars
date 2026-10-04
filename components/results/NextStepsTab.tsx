@@ -1,15 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import type { Finding } from "@/lib/schema";
 import type { TriageChoice } from "./FindingsTab";
 
 interface NextStepsTabProps {
   decisionSummary: string;
-  closingNote: string;
+  closingNote?: string;
   findings: Finding[];
   triageMap: Record<string, TriageChoice>;
   onSwitchToFindings: () => void;
+  personalNotes: string;
+  onChangePersonalNotes: (notes: string) => void;
+  savedDocId: string | null;
+  saveStatus: "idle" | "saving" | "saved" | "error";
+  onSave: () => void;
 }
 
 export function NextStepsTab({
@@ -18,6 +24,11 @@ export function NextStepsTab({
   findings,
   triageMap,
   onSwitchToFindings,
+  personalNotes,
+  onChangePersonalNotes,
+  savedDocId,
+  saveStatus,
+  onSave,
 }: NextStepsTabProps) {
   // Filter findings marked "Worth investigating"
   const investigatingFindings = findings.filter(
@@ -26,8 +37,6 @@ export function NextStepsTab({
 
   // Local checklist checked state
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
-  // User personal reflection notes
-  const [personalNotes, setPersonalNotes] = useState<string>("");
   // Copy confirmation state
   const [copiedStatus, setCopiedStatus] = useState<boolean>(false);
 
@@ -40,7 +49,7 @@ export function NextStepsTab({
 
   const handleCopyNotes = async () => {
     const lines: string[] = [];
-    lines.push(`SECOND LOOK REFLECTION SUMMARY`);
+    lines.push(`PERSPECTRA REFLECTION SUMMARY`);
     lines.push(`Decision: ${decisionSummary}\n`);
 
     if (investigatingFindings.length > 0) {
@@ -59,30 +68,36 @@ export function NextStepsTab({
     }
 
     if (closingNote) {
-      lines.push(`NOTE:`);
-      lines.push(closingNote);
+      lines.push(`NOTE:\n${closingNote}\n`);
     }
 
+    lines.push(
+      `---\nPerspectra is a thinking tool. It surfaces assumptions and questions, but never decides for you.`
+    );
+
+    const fullText = lines.join("\n");
+
     try {
-      await navigator.clipboard.writeText(lines.join("\n"));
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(fullText);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = fullText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
       setCopiedStatus(true);
       setTimeout(() => setCopiedStatus(false), 3000);
     } catch {
-      // Ignore clipboard write failures gracefully
+      setCopiedStatus(false);
     }
   };
 
   return (
-    <div className="space-y-6 text-left">
-      {/* Editorial Overview */}
-      <div className="bg-[#ffffff] border border-[#dbd4c7] p-4 rounded-xl text-[15px] text-[#4e5e77] space-y-1">
-        <p className="font-semibold text-[#18263e]">Your Personal Next Steps</p>
-        <p>
-          This checklist compiles the concrete inquiry items from findings you selected as worth investigating. The decision remains yours to steer.
-        </p>
-      </div>
-
-      {/* Investigation Checklist Section */}
+    <div className="space-y-6">
+      {/* Top Section: Inquiry Checklist */}
       <section
         aria-labelledby="checklist-heading"
         className="bg-[#ffffff] rounded-2xl border border-[#dbd4c7] p-5 sm:p-6 space-y-4 shadow-2xs"
@@ -176,7 +191,7 @@ export function NextStepsTab({
         <textarea
           rows={4}
           value={personalNotes}
-          onChange={(e) => setPersonalNotes(e.target.value)}
+          onChange={(e) => onChangePersonalNotes(e.target.value)}
           placeholder="Capture your immediate takeaways, resolved uncertainties, or next discussions you want to have..."
           className="w-full px-4 py-3 rounded-xl border border-[#dbd4c7] text-[16px] text-[#18263e] bg-[#ffffff] placeholder-[#6c7c94] focus-visible:outline-2 focus-visible:outline-[#18263e] resize-y"
           aria-labelledby="thinking-now-heading"
@@ -199,8 +214,8 @@ export function NextStepsTab({
         </aside>
       )}
 
-      {/* Action Row: Copy Notes & Save Stub */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+      {/* Action Row: Copy Notes & Real Save Flow */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -221,16 +236,41 @@ export function NextStepsTab({
           )}
         </div>
 
-        {/* Save Stub (Clearly marked coming next) */}
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          title="Account saving will be added in a future phase"
-          className="min-h-[46px] px-5 py-2.5 rounded-xl text-[14px] font-medium text-[#6c7c94] bg-[#f3ede2]/70 border border-[#dbd4c7] cursor-not-allowed opacity-80"
-        >
-          Save this analysis — sign-in coming next
-        </button>
+        {/* Real Save Flow with Privacy Notice */}
+        <div className="flex flex-col sm:items-end gap-1.5">
+          {savedDocId ? (
+            <div
+              aria-live="polite"
+              className="flex items-center gap-3 min-h-[44px]"
+            >
+              <span className="text-[15px] font-semibold text-[#18263e] flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-[#18263e]" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                {saveStatus === "saving" ? "Saving..." : "Saved"}
+              </span>
+              <Link
+                href={`/saved/${savedDocId}`}
+                className="text-[15px] font-medium text-[#b46b19] hover:underline focus-visible:outline-2 focus-visible:outline-[#18263e]"
+              >
+                View in saved &rarr;
+              </Link>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saveStatus === "saving"}
+              className="min-h-[46px] px-5 py-2.5 rounded-xl font-medium text-[15px] text-[#18263e] bg-[#ffffff] border border-[#dbd4c7] hover:bg-[#f3ede2] hover:border-[#18263e] transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer shadow-2xs disabled:opacity-60"
+            >
+              {saveStatus === "saving" ? "Saving..." : "Save this analysis"}
+            </button>
+          )}
+
+          <p className="text-[13px] text-[#6c7c94] text-left sm:text-right">
+            Saved analyses are private to your account. You can delete them anytime.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -81,3 +81,53 @@ D9: Single main branch. Solo, short competition. Work is committed by the develo
 - **Context:** The developer preview JSON needed replacement with a polished, trustworthy results screen allowing users to triage blind spots and formulate personal next steps.
 - **Decision:** Provide four accessible tabs (Findings, In your words, Premortem, Next steps) with client-side mutually exclusive triage ("Worth investigating", "Already considered", "Not relevant"), bidirectional navigation between findings and annotated verbatim evidence spans, personal synthesis textarea, and exportable checklist notes. Saving remains an explicit stub until authentication is built.
 - **Consequence:** Users retain complete agency over their thinking, zero directive advice is given, and every observation remains grounded in the user's verified text.
+
+## D19: Product Rebrand to Perspectra
+- **Context:** The product needed a distinctive, evocative brand identity reflecting its core purpose of illuminating overlooked angles and ranges of perspective.
+- **Decision:** Renamed the product from Second Look to Perspectra. The name combines 'perspective' and 'spectra' (a range of views), matching the product's purpose of showing a wider view of a decision.
+- **Consequence:** Rebranded user-facing copy, headers, monogram, storage keys, and documentation to Perspectra while retaining strict non-directive reflection architecture.
+
+## D20: Client-Direct Private Saving via Owner-Only Firestore
+- **Context:** Guests should be able to use the entire product without friction, while signed-in users can securely persist and update analyses.
+- **Decision:** Guest-first with optional Google sign-in; saving writes directly from the client to Firestore, protected by owner-only rules; there are no server-side writes.
+- **Consequence:** Full guest functionality is preserved without requiring account creation, backend complexity is minimized, and user documents remain strictly isolated under authenticated user UIDs.
+
+## D21: Client-Side Sorting of Saved Analyses
+- **Context:** Querying Firestore with combined `where` and `orderBy` on different fields requires creating composite indexes.
+- **Decision:** The saved list is sorted in client code to avoid needing a composite Firestore index.
+- **Consequence:** Eliminates index deployment prerequisites while safely ordering user analyses up to the query limit.
+
+## D22: Type Picker Confirmation, Brand Navigation, and Responsive Desktop Layout
+- **Context:** User testing indicated that defaulting the type picker pre-selected "career", which misled users. Furthermore, users navigating via the brand logo needed a smooth way to return to the landing page without losing their draft, and large screens had cramped single-column workspaces.
+- **Decision:** Type picker: no default selection; the check mark is a 900ms confirmation, then auto-advance. Brand link returns to the landing view without clearing the draft. Desktop workspace aligned to the header width with a two-column question layout. Results view expands to max-w-6xl with 2-column finding cards on desktop (xl:grid-cols-2).
+- **Consequence:** Eliminates unintentional default bias, preserves user draft state across navigation, improves readability on standard desktop monitors (1366x768 and 1280x720) without requiring scrolling, and retains comfortable single-column ergonomics on mobile.
+
+## D23: Best-effort in-memory rate limiting with generous defaults, because judges may share an IP and the limit is per instance.
+- **Context:** Automated abuse can drain Gemini token quotas or burden serverless instances, while hackathon judges or teams in an office may share a single public IP.
+- **Decision:** In-memory rate limiting per server instance with generous defaults (20 requests per 10 minutes in production, 120 in non-production) and a global per-instance hourly ceiling (300).
+- **Consequence:** Prevents runaway compute and rapid abuse on individual instances without blocking legitimate evaluation or multi-user shared IPs, documented honestly as best-effort on serverless.
+
+## D24: Same-origin and content-type checks instead of CSRF tokens, since the API takes JSON and carries no cookies.
+- **Context:** Protecting API endpoints from cross-site invocation without introducing unnecessary stateful anti-CSRF token ceremonies.
+- **Decision:** Enforce JSON Content-Type validation and strict same-origin verification (comparing Origin header host against request Host and optional ALLOWED_ORIGINS), permitting missing Origin headers for local/curl testing.
+- **Consequence:** Neutralizes cross-origin browser form hijacking and ambient script attacks efficiently without cookie or token overhead.
+
+## D25: The server returns the sanitised text that evidence spans refer to.
+- **Context:** Stripping control and invisible zero-width characters prior to validation and grounding could cause client text indices to misalign with server evidence spans.
+- **Decision:** The server sanitises inputs (Unicode NFC and character removal) before validation, and returns `{ kind: "analysis", analysis, receipt, input: { decision, reasons, context } }` containing the exact sanitised text.
+- **Consequence:** Guaranteed character-offset alignment for visual highlight marks in the "In your words" tab without visual text corruption.
+
+## D26: Crisis-language fallback: no model call, no analysis, no saving; helpline details verified.
+- **Context:** Users experiencing acute emotional distress or self-harm ideation need genuine human care and verified support rather than an AI decision thinking tool.
+- **Decision:** Intercept explicit first-person crisis language on the server before Gemini is invoked. Return a calm support card with verified free helplines (Tele-MANAS for India and local emergency directions) with no analysis UI, no saving options, and no model calls.
+- **Consequence:** Protects vulnerable individuals immediately while respecting privacy (texts are never logged or stored anywhere).
+
+## D27: CSP with unsafe-inline scripts as a documented compromise.
+- **Context:** Content Security Policy helps mitigate XSS, but Next.js App Router relies on inline scripts for hydration bootstrap without runtime nonces.
+- **Decision:** Allow 'unsafe-inline' for scripts in CSP as a documented compromise, while disallowing object-src, frame-ancestors, and restricting connect-src and frame-src to verified Google domains.
+- **Consequence:** Maintains full compatibility with Next.js hydration and Google OAuth popups while documenting nonce-based CSP as a planned future improvement.
+
+## D28: Test Suite Overhaul with Vitest and Branch Coverage Thresholds
+- **Context:** The initial testing relied on a single runner file with limited assertions. Robust verification of product principles (non-directive advice guard, grounding verification, exclusion of certaintyBefore from Gemini payloads, and request guards) required a standard, comprehensive test suite.
+- **Decision:** Adopt Vitest with v8 coverage provider and React Testing Library in jsdom. Enforce coverage thresholds (>= 85% lines, >= 80% branches for `lib/**`), excluding `server/gemini.ts` which requires a live API key and live network access. Validate tests using mutation sanity checks across 5 core safety invariants.
+- **Consequence:** Provides fast, high-confidence regression prevention (97 tests across 13 suites) and automated CI gating on `npm run test:coverage`.

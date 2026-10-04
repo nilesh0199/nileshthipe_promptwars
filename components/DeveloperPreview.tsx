@@ -19,8 +19,10 @@ export function DeveloperPreview({
   onBack,
   onStartOver,
 }: DeveloperPreviewProps) {
-  const { receipt } = data;
-  const receiptSummary = `Receipt: language check ${receipt.language_check}, ${receipt.findings_total} findings (${receipt.findings_grounded} grounded, ${receipt.quotes_dropped} quotes dropped), retry: ${receipt.retried ? "yes" : "no"}.`;
+  const receipt = data.kind === "analysis" ? data.receipt : null;
+  const receiptSummary = receipt
+    ? `Receipt: language check ${receipt.language_check}, ${receipt.findings_total} findings (${receipt.findings_grounded} grounded, ${receipt.quotes_dropped} quotes dropped), retry: ${receipt.retried ? "yes" : "no"}.`
+    : "Support response resources provided.";
 
   return (
     <div className="space-y-4 text-left">

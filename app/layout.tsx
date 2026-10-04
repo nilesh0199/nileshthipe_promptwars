@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ViewProvider } from "@/components/navigation/ViewContext";
+import { Header } from "@/components/Header";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -22,9 +25,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Second Look: see your decision from where you're not standing",
+  title: "Perspectra: a wider view of every decision",
   description:
-    "Describe a decision and your reasoning. Second Look shows the assumptions and open questions in your thinking, in your own words.",
+    "Describe a decision and your reasoning. Perspectra shows the assumptions and open questions in your thinking, in your own words, and never decides for you.",
 };
 
 export default function RootLayout({
@@ -45,39 +48,20 @@ export default function RootLayout({
           Skip to content
         </a>
 
-        {/* Slim App Header */}
-        <header className="w-full border-b border-[#dbd4c7] bg-[#faf8f5]/90 backdrop-blur-xs sticky top-0 z-30">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <div
-                className="w-7 h-7 rounded-md bg-[#18263e] flex items-center justify-center text-[#faf8f5] font-serif font-bold text-base shadow-2xs select-none"
-                aria-hidden="true"
-              >
-                S
-              </div>
-              <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#18263e]">
-                Second Look
-              </span>
-            </div>
+        <AuthProvider>
+          <ViewProvider>
+            <Header />
 
-            <button
-              type="button"
-              className="min-h-[44px] px-3.5 py-1.5 text-[15px] sm:text-base font-medium text-[#18263e] bg-transparent border border-[#dbd4c7] rounded-lg hover:bg-[#f3ede2] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] cursor-pointer"
-              aria-label="Log in or Sign up (Coming soon)"
-            >
-              Log in / Sign up
-            </button>
-          </div>
-        </header>
-
-        <main id="main-content" className="flex-1 w-full mx-auto max-w-6xl px-4 sm:px-6 py-5 sm:py-8 flex flex-col justify-center">
-          {children}
-        </main>
+            <main id="main-content" className="flex-1 w-full mx-auto max-w-6xl px-4 sm:px-6 py-5 sm:py-8 flex flex-col justify-center">
+              {children}
+            </main>
+          </ViewProvider>
+        </AuthProvider>
 
         {/* Compact Single-line Footer */}
         <footer className="w-full border-t border-[#dbd4c7] py-3 px-4 sm:px-6 bg-[#faf8f5]/80 text-center text-[15px] text-[#6c7c94]">
           <p>
-            For reflection, not professional advice. Nothing is saved unless you sign in and choose Save.
+            Perspectra is for reflection, not professional advice. Nothing is saved unless you sign in and choose Save.
           </p>
         </footer>
       </body>
