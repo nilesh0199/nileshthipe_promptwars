@@ -73,6 +73,15 @@ This document outlines the security architecture, threat model, mitigations, kno
   - Sensitive credential keys (`key`, `token`, `secret`, `password`, `authorization`) are automatically redacted in logger output.
   - IP addresses and Origin headers are never logged in rate-limiting or forbidden events.
 
+### Account Enumeration, Weak Passwords & Unverified Emails
+- **Threat:** Malicious probing to enumerate registered user email addresses; brute-force attacks against weak passwords; spam/unverified accounts.
+- **Mitigation:**
+  - Strict anti-enumeration: All credential failure errors (`auth/invalid-credential`, `auth/wrong-password`, `auth/user-not-found`) return the identical neutral error message: "Email or password is incorrect."
+  - Password reset always responds with "If an account exists for that email, we've sent a reset link." regardless of whether the account exists.
+  - Password strength enforcement: client and server validation require at least 8 characters at account creation.
+  - Email verification: automated verification links dispatched upon account creation, accompanied by a non-blocking dismissible reminder banner with a 60-second cooldown Resend button.
+  - Rate limiting on authentication: Firebase Auth `too-many-requests` returns a calm waiting advisory without exposing internal rate counter metrics.
+
 ### Dependency Risks
 - **Threat:** Exploitable vulnerabilities in third-party npm packages.
 - **Mitigation:**
@@ -100,6 +109,12 @@ This document outlines the security architecture, threat model, mitigations, kno
    The application has undergone automated security testing and threat modeling audits, but has not yet undergone a third-party commercial penetration test.
 5. **Client-Side Firestore Writes Depend Entirely on Security Rules:**
    Because guest-first access is prioritized and saving is client-direct, data integrity and write authorization rely completely on Firestore Security Rules being correctly deployed.
+6. **No Account or Profile Deletion:**
+   Self-service account deletion and Firestore profile document deletion (`allow delete: if false` on `profiles/{uid}`) are intentionally out of scope in this phase.
+7. **No Email-Verification Gating:**
+   Unverified email accounts are permitted full access to thinking and saving features. Email verification is encouraged via a dismissible banner rather than hard gating.
+8. **No Multi-Factor Authentication (MFA):**
+   Multi-factor authentication (SMS, TOTP) is not implemented in this phase.
 
 ---
 

@@ -15,7 +15,7 @@ People make decisions based on the information most visible to them, frequently 
 - Compact landing page fitted to desktop viewports (1280x720 / 1366x768) with Fraunces serif display heading, abstract decorative product preview, and four accessible info tabs ("What it does", "How it works", "Our promise", "Privacy") supporting roving tabindex and keyboard navigation.
 - Five structured decision types (`study`, `career`, `money`, `life`, `other`) with deliberate selection (no default pre-selection, 900ms confirmation with check mark before auto-advancing), domain reflection lenses, concrete placeholders, and realistic examples, plus a quiet advisory line for money decisions.
 - Guided one-question-per-screen interview flow defined in a single steps configuration (`lib/flow.ts`) with responsive two-column layout on desktop viewports (1024px+), four data fields: `decision` (min 3 chars, max 300), `reasons` (min 3 chars, max 600), `context` (optional, max 800), and self-reported `certaintyBefore` (optional rating 1-5).
-- Brand header navigation: monogram and wordmark button returns to the landing view without wiping the draft in progress, supporting browser history forward/back navigation.
+- Brand header navigation: brand logo mark emblem and wordmark button returns to the landing view without wiping the draft in progress, supporting browser history forward/back navigation.
 - "So far" interactive summary chips displaying answers given so far, allowing users to jump back to any previous question without losing entered text.
 - Certainty-before rating: an accessible 1 to 5 radio group with keyboard arrow navigation, strictly isolated for the user only and never sent to the AI.
 - Input validation: inline messages on required questions when submitted empty or below minimum length, linked via `aria-describedby` with no red error colors.
@@ -24,7 +24,8 @@ People make decisions based on the information most visible to them, frequently 
 - Session persistence: stores the active screen and draft data in browser `sessionStorage` under `perspectra_workspace_v2`, cleanly ignoring obsolete or invalid schemas on reload.
 - Analysis route handler (`POST /api/analyze`): strict server validation via Zod, delimiter attack neutralization, structured prompt assembly with decision-type reflection lenses, server-side timeout/retry management, verbatim substring quote verification, basis downgrading (`inferred`), and programmatic neutrality receipts.
 - Production results experience (`components/results/ResultsView.tsx`): 4 accessible tabs ("Findings", "In your words", "Premortem", "Next steps") with desktop-optimized wide layout (`max-w-6xl` with 2-column finding cards on `xl:`), grouped finding cards, verbatim grounded quote blocks, bidirectional evidence linking, client-side triage ("Worth investigating", "Already considered", "Not relevant to me"), premortem reflection questions, structural reasoning map, personal synthesis notes, copyable export checklist, neutrality audit receipt, and post-analysis certainty reflection.
-- Optional Google sign-in: client-only Firebase Auth (`components/auth/AuthProvider.tsx`, `components/auth/SignInModal.tsx`) using `signInWithPopup` with `GoogleAuthProvider`. Guest-first access remains fully functional without an account.
+- Optional authentication: client-only Firebase Auth (`components/auth/AuthProvider.tsx`, `components/auth/SignInModal.tsx`) supporting both Google OAuth and Email/Password accounts (with name capture at sign-up, password strength verification, password reset, and non-blocking email verification reminders). Guest-first access remains fully functional without an account.
+- Personal account profiles (`/profile`, `lib/profile.ts`, `lib/profileStore.ts`): optional name, age, and profession fields stored in Cloud Firestore (`profiles/{uid}`) with client-side validation and immediate Header avatar sync. Profile metadata is strictly isolated to the user account and is never transmitted to the Gemini AI models or included in prompts or analyses.
 - Private cloud saving: saves analyses directly to Cloud Firestore (`lib/saved.ts`) under owner-only security rules (`firestore.rules`). Seamless debounced auto-saving (~1s) on triage, notes, and certainty updates. Pending guest saves survive in `sessionStorage` and persist automatically upon sign-in.
 - Saved analyses dashboard (`/saved`): client-side sorted list of private analyses displaying titles, timestamps, and investigation counters, featuring inline-confirmed single item deletion and batched delete-all.
 - Saved analysis view (`/saved/[id]`): deep links restoring full analysis, triage decisions, and notes directly into the production `ResultsView`.
@@ -55,8 +56,8 @@ People make decisions based on the information most visible to them, frequently 
 | :--- | :--- | :--- |
 | Google Fonts via next/font | Display (Fraunces) and UI (Inter) typography (fetched at build time, self-hosted) | Implemented |
 | Gemini API | Structured, non-directive analysis of user reasoning via `@google/genai` | Implemented |
-| Firebase Authentication | Optional Google sign-in for saving private analyses | Implemented |
-| Cloud Firestore | Client-direct, owner-only private storage and updates of analyses | Implemented |
+| Firebase Authentication | Optional Google and Email/Password sign-in for saving private analyses and managing accounts | Implemented |
+| Cloud Firestore | Client-direct, owner-only private storage of analyses (`analyses/{id}`) and user profiles (`profiles/{uid}`) | Implemented |
 
 *Other platforms note: Vercel (hosting) and GitHub (source control and CI) are not Google services.*
 
@@ -84,8 +85,8 @@ npm run build
 ```
 
 ### Automated Tests
-Automated test suite executed via [Vitest](https://vitest.dev/) with v8 coverage and React Testing Library (97 tests across 13 test files):
-1. **Unit tests (`tests/unit/`, 65 tests):**
+Automated test suite executed via [Vitest](https://vitest.dev/) with v8 coverage and React Testing Library (118 tests across 16 test files):
+1. **Unit tests (`tests/unit/`, 78 tests):**
    - `schema.test.ts` (10 tests): Rejects `certaintyBefore` and unknown fields, enforces string limits, validates all 5 decision types and AI output schema.
    - `guard.test.ts` (5 tests): Flags 15 directive advice categories in output while preserving tentative inquiry phrases.
    - `grounding.test.ts` (8 tests): Verifies grounded evidence spans against user input, drops hallucinated quotes, normalizes punctuation, handles international non-Latin scripts (Hindi and Marathi), and handles edge cases.
@@ -94,18 +95,21 @@ Automated test suite executed via [Vitest](https://vitest.dev/) with v8 coverage
    - `prompt.test.ts` (4 tests): Assembles prompts across all decision types without ever leaking `certaintyBefore`.
    - `saved.test.ts` (12 tests): Firestore document construction with owner uid, recursive sanitization, client-side sorting, and batched account deletion.
    - `analyze.test.ts` (7 tests): Analysis orchestration, retry recovery on soft errors, upstream quota error fast-fail, and deadline timeouts.
+   - `profile.test.ts` (8 tests): Boundary validations for name/age/profession, clean document construction, display name precedence, calm anti-enumeration error mapping, and strict profile data isolation from AI prompts.
+   - `profileStore.test.ts` (5 tests): Client Firestore document read/write with merge, timestamp enforcement, auth display name synchronization, and default profile provisioning.
 2. **API route tests (`tests/api/`, 12 tests):**
    - `analyze-route.test.ts` (11 tests): POST enforcement (405), Content-Type checks (400), payload size limits (413), same-origin blocking (403), rate limiting (429), crisis responses, and successful analyses.
    - `health-route.test.ts` (1 test): Verifies 200 OK liveness check with ISO timestamp.
-3. **Component integration tests (`tests/components/`, 14 tests):**
+3. **Component integration tests (`tests/components/`, 22 tests):**
    - `type-picker-and-workspace.test.tsx` (7 tests): Unselected fresh state, 900ms confirmation timer, keyboard navigation, required field validation, and payload verification ensuring `certaintyBefore` is never sent to the API.
    - `results-and-safe-rendering.test.tsx` (5 tests): Triage mutual exclusivity, dynamic Next Steps filtering, grounded `<mark>` highlights, safe plain-text rendering preventing XSS, and basis badge labels.
-   - `auth-and-brand.test.tsx` (2 tests): `SignInModal` focus trap and keyboard dismissal, and Header brand navigation preserving user drafts.
+   - `auth-and-brand.test.tsx` (3 tests): `SignInModal` focus trap and keyboard dismissal, Header brand navigation preserving user drafts, and brand logo mark image rendering.
+   - `auth-modal-and-profile.test.tsx` (7 tests): Two-mode AuthModal ("Log in" and "Create account"), password visibility toggling, inline field validations, trimmed name propagation, Header identity dropdown menu, and Profile page form persistence.
 
 **Coverage (v8):**
-- `lib/**` Lines: **92.15%** (threshold: >= 85%)
-- `lib/**` Branches: **83.33%** (threshold: >= 80%)
-- Overall project statements/lines: **79.22%** (3,142 / 3,966)
+- `lib/**` Lines: **92.41%** (threshold: >= 85%)
+- `lib/**` Branches: **83.87%** (threshold: >= 80%)
+- Overall project statements/lines: **80.76%** (3,770 / 4,668)
 - Excluded modules: `lib/server/gemini.ts` (requires live API key; tested via mocks) and `lib/types.ts` (pure TypeScript types).
 - Detailed documentation and mutation check verification available in [docs/testing.md](docs/testing.md).
 

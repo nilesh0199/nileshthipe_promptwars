@@ -85,9 +85,10 @@ The test suite is organized into three distinct tiers:
    - Verifies grounded citations are rendered with `<mark>` tags in the "In your words" tab.
    - Verifies safe HTML escaping without script injection or DOM element generation.
    - Verifies badge labels for `inferred` and `unknown` basis findings.
-3. **`auth-and-brand.test.tsx` (2 tests)**
+3. **`auth-and-brand.test.tsx` (3 tests)**
    - Tests accessibility and keyboard navigation in `SignInModal` (focus trapping and Escape restoration).
    - Verifies Header brand link navigates back to landing view without clearing draft answers in `sessionStorage`.
+   - Verifies brand mark logo image (`/brand/logo-mark.png`) renders with decorative alt attributes in both Header and `SignInModal`.
 
 ---
 

@@ -143,4 +143,21 @@ describe("SignInModal & Brand Link", () => {
     const parsed = JSON.parse(stored!);
     expect(parsed.formData.decision).toBe("My draft decision");
   });
+
+  it("renders the new brand logo mark image in Header and SignInModal", () => {
+    render(
+      <authProviderModule.AuthProvider>
+        <ViewProvider>
+          <Header />
+          <SignInModal isOpen={true} onClose={() => {}} />
+        </ViewProvider>
+      </authProviderModule.AuthProvider>
+    );
+
+    const brandImages = document.querySelectorAll('img[src*="logo-mark.png"]');
+    expect(brandImages.length).toBe(2);
+    brandImages.forEach((img) => {
+      expect(img).toHaveAttribute("alt", "");
+    });
+  });
 });

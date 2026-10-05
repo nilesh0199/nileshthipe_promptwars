@@ -14,5 +14,16 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid','title','input','analysis','receipt','triage','notes','certaintyBefore','certaintyAfter','createdAt','updatedAt'])
         && request.resource.data.notes.size() <= 3000;
     }
+
+    match /profiles/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['displayName','age','profession','createdAt','updatedAt'])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 2 && request.resource.data.displayName.size() <= 60
+        && (request.resource.data.get('age', null) == null || (request.resource.data.age is int && request.resource.data.age >= 13 && request.resource.data.age <= 120))
+        && (request.resource.data.get('profession', null) == null || (request.resource.data.profession is string && request.resource.data.profession.size() <= 80));
+      allow delete: if false;
+    }
   }
 }
