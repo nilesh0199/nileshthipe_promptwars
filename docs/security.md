@@ -73,14 +73,32 @@ This document outlines the security architecture, threat model, mitigations, kno
   - Sensitive credential keys (`key`, `token`, `secret`, `password`, `authorization`) are automatically redacted in logger output.
   - IP addresses and Origin headers are never logged in rate-limiting or forbidden events.
 
-### Account Enumeration, Weak Passwords & Unverified Emails
-- **Threat:** Malicious probing to enumerate registered user email addresses; brute-force attacks against weak passwords; spam/unverified accounts.
+### Account Enumeration, Weak Passwords & Email Security
+- **Threat:** Malicious probing to enumerate registered user email addresses; brute-force attacks against weak passwords; unowned account addresses.
 - **Mitigation:**
   - Strict anti-enumeration: All credential failure errors (`auth/invalid-credential`, `auth/wrong-password`, `auth/user-not-found`) return the identical neutral error message: "Email or password is incorrect."
-  - Password reset always responds with "If an account exists for that email, we've sent a reset link." regardless of whether the account exists.
+  - Password reset always responds with "If an account exists for that email, we've sent a reset link." regardless of whether the account exists, dispatched only to the inbox of the address owner.
   - Password strength enforcement: client and server validation require at least 8 characters at account creation.
-  - Email verification: automated verification links dispatched upon account creation, accompanied by a non-blocking dismissible reminder banner with a 60-second cooldown Resend button.
   - Rate limiting on authentication: Firebase Auth `too-many-requests` returns a calm waiting advisory without exposing internal rate counter metrics.
+
+### Shared-Computer Workstations & Session Bleeding
+- **Threat:** On shared public devices (e.g. libraries, family laptops, co-working terminals), a previous user signing out could leave private decision drafts, personal notes, or uncommitted background saves in browser memory or storage. A subsequent user could inspect the previous user's sensitive reflections or inadvertently save User A's pending draft into User B's account.
+- **Mitigation:**
+  - **Storage Purge on Sign-Out:** `clearUserScopedClientState()` explicitly deletes all client storage keys (`perspectra_workspace_v2`, `perspectra_pending_save_v1`) from both `sessionStorage` and `localStorage` on `signOut()`.
+  - **Pending Write Cancellation:** `cancelPendingWriteTimers()` unregisters and cancels any active debounced auto-save timers (e.g. 1000ms delay for notes/certainty updates) prior to Firebase sign-out, eliminating race conditions where debounced writes trigger under a new session.
+  - **Component State Invalidation via Session Epoch:** `AuthProvider` maintains an incremental `sessionEpoch` counter bumped on every sign-out. The workspace and active results components bind their React lifecycle (`key={sessionEpoch}`), guaranteeing that all in-memory user inputs, draft forms, and analysis results are destroyed and unmounted upon sign-out.
+  - **User-Specific UID Keying:** Authenticated pages (`/saved`, `/saved/[id]`, `/profile`) bind data fetching and local component states directly to `user?.uid`. When `user` becomes null or switches UIDs, all in-memory arrays and form states are immediately wiped clean before rendering fallback prompts.
+
+### Pending-Save Hijacking & Stale Payload Claiming
+- **Threat:** A guest user analyzes a sensitive decision on a shared workstation and clicks "Save this analysis", writing a serialized pending payload into browser `sessionStorage`. If the guest abandons the auth modal without completing sign-in and walks away, a subsequent user sitting at the terminal might log into their own account via the header button or a direct URL, inadvertently claiming and persisting the previous guest's private decision to their account. Alternatively, duplicate executions under React StrictMode could trigger duplicate document writes.
+- **Mitigation:**
+  - **Metadata Attestation:** Every pending save payload in `sessionStorage` contains `{ data, createdAt: timestamp, initiatedBySave: true }`.
+  - **Save-Flow Origin Binding:** Only a sign-in triggered directly from the active Save button (`isSaveInitiatedRef` guard) can consume the pending payload. Opening the auth modal from the Header button or any other navigation path immediately clears or bypasses the pending payload.
+  - **Immediate Dismissal Purging:** Closing the auth modal without completing sign-in (via "Not now" button, close "X" button, Escape key, or backdrop click) immediately purges the pending payload from `sessionStorage` and cancels save initiation.
+  - **10-Minute Expiry Window:** Payloads older than 10 minutes (`PENDING_SAVE_EXPIRY_MS = 600,000`) or with timestamps in the future are rejected, purged from storage, and never saved.
+  - **Strict Single-Execution Guard:** An in-flight lock (`isConsumingRef`) guarantees that upon sign-in, `saveAnalysis` is executed exactly once, preventing double saves under React StrictMode or re-renders.
+  - **Save Error Resilience:** If writing to Firestore fails due to network or service errors, the payload is preserved in `sessionStorage` until the 10-minute expiry and an error message with a "Try again" button is displayed so the user does not lose their reflection notes.
+  - **Sign-Out Purge:** Explicit sign-out clears all `perspectra_*` keys from `sessionStorage` and `localStorage`.
 
 ### Dependency Risks
 - **Threat:** Exploitable vulnerabilities in third-party npm packages.
@@ -111,8 +129,8 @@ This document outlines the security architecture, threat model, mitigations, kno
    Because guest-first access is prioritized and saving is client-direct, data integrity and write authorization rely completely on Firestore Security Rules being correctly deployed.
 6. **No Account or Profile Deletion:**
    Self-service account deletion and Firestore profile document deletion (`allow delete: if false` on `profiles/{uid}`) are intentionally out of scope in this phase.
-7. **No Email-Verification Gating:**
-   Unverified email accounts are permitted full access to thinking and saving features. Email verification is encouraged via a dismissible banner rather than hard gating.
+7. **Email Addresses Are Not Verified:**
+   Email addresses are not verified, so an account can be created with an address the person does not own. However, no feature depends on a verified address, and password reset still goes only to the address owner.
 8. **No Multi-Factor Authentication (MFA):**
    Multi-factor authentication (SMS, TOTP) is not implemented in this phase.
 

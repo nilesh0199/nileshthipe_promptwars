@@ -5,6 +5,7 @@ import { callGemini } from "./gemini";
 import { containsDirectiveLanguage } from "./guard";
 import { groundFindings } from "./grounding";
 import { logger } from "./logger";
+import { getEnv } from "./env";
 
 export class BadAIOutputError extends Error {
   public readonly reasonCode: string;
@@ -16,13 +17,27 @@ export class BadAIOutputError extends Error {
   }
 }
 
+export class AIQuotaError extends Error {
+  public readonly status: number;
+  public readonly attempt?: number;
+
+  constructor(status: number = 429, attempt?: number) {
+    super("The AI service has reached its limit for now");
+    this.name = "AIQuotaError";
+    this.status = status;
+    this.attempt = attempt;
+  }
+}
+
 export class AIUnavailableError extends Error {
   public readonly status?: number;
+  public readonly attempt?: number;
 
-  constructor(status?: number) {
+  constructor(status?: number, attempt?: number) {
     super("The AI service is unavailable or rate limited");
     this.name = "AIUnavailableError";
     this.status = status;
+    this.attempt = attempt;
   }
 }
 
@@ -68,12 +83,14 @@ type AttemptResult = ParseAttemptResult | ParseAttemptFailure;
 async function runAttempt(
   systemInstruction: string,
   userPrompt: string,
-  timeoutMs: number
+  timeoutMs: number,
+  modelOverride?: string
 ): Promise<AttemptResult> {
   const result = await callGemini({
     systemInstruction,
     userPrompt,
     timeoutMs,
+    modelOverride,
   });
 
   const tokenUsage = result.tokenUsage;
@@ -109,24 +126,45 @@ async function runAttempt(
   return { success: true, data: validation.data, tokenUsage };
 }
 
-function isUpstreamQuotaOrServerError(err: unknown): { isMatch: boolean; status?: number } {
+function isUpstreamQuotaError(err: unknown): { isMatch: boolean; status?: number } {
   if (err && typeof err === "object") {
     const anyErr = err as Record<string, unknown>;
     const status = typeof anyErr.status === "number" ? anyErr.status : undefined;
-    if (status === 429 || (status && status >= 500 && status < 600)) {
-      return { isMatch: true, status };
+    if (status === 429) {
+      return { isMatch: true, status: 429 };
     }
 
     const message = typeof anyErr.message === "string" ? anyErr.message : "";
     if (
       message.includes("429") ||
       message.includes("RESOURCE_EXHAUSTED") ||
+      /quota/i.test(message) ||
+      /rate limit/i.test(message)
+    ) {
+      return { isMatch: true, status: status || 429 };
+    }
+  }
+  return { isMatch: false };
+}
+
+function isUpstreamOverloadError(err: unknown): { isMatch: boolean; status?: number } {
+  if (err && typeof err === "object") {
+    const anyErr = err as Record<string, unknown>;
+    const status = typeof anyErr.status === "number" ? anyErr.status : undefined;
+    if (status && status >= 500 && status < 600) {
+      return { isMatch: true, status };
+    }
+
+    const message = typeof anyErr.message === "string" ? anyErr.message : "";
+    if (
       message.includes("503") ||
       message.includes("UNAVAILABLE") ||
       message.includes("500") ||
-      message.includes("INTERNAL")
+      message.includes("INTERNAL") ||
+      /overload/i.test(message) ||
+      /high demand/i.test(message)
     ) {
-      return { isMatch: true, status };
+      return { isMatch: true, status: status || 503 };
     }
   }
   return { isMatch: false };
@@ -147,7 +185,7 @@ function isAbortOrTimeout(err: unknown): boolean {
 }
 
 /**
- * Orchestrates analysis generation, retry logic, grounding, and receipt creation.
+ * Orchestrates analysis generation, retry logic, fallback model, grounding, and receipt creation.
  * Deadline: 28 seconds total.
  */
 export async function analyze(
@@ -157,19 +195,29 @@ export async function analyze(
   const OVERALL_DEADLINE_MS = 28000;
   const startTime = Date.now();
 
+  const env = getEnv();
+  const fallbackModel = env.GEMINI_FALLBACK_MODEL;
+
   let systemInstruction = buildSystemInstruction(input.decisionType);
   const userPrompt = buildUserPrompt(input);
 
   let attemptNumber = 1;
   let hasRetried = false;
   let validModelAnalysis: ModelAnalysis | null = null;
+  let currentModelOverride: string | undefined = undefined;
+  let hasUsedFallback = false;
+  let hasOverloadRetried = false;
 
   while (!validModelAnalysis) {
     const elapsed = Date.now() - startTime;
     const remainingMs = OVERALL_DEADLINE_MS - elapsed;
 
     if (remainingMs <= 0) {
-      logger.error("analyze.error", { reason: "overall_timeout" }, requestId);
+      logger.error(
+        "analyze.error",
+        { code: "TIMEOUT", reason: "overall_timeout", attempt: attemptNumber },
+        requestId
+      );
       throw new AnalysisTimeoutError();
     }
 
@@ -177,7 +225,12 @@ export async function analyze(
     const attemptStart = Date.now();
 
     try {
-      const attemptRes = await runAttempt(systemInstruction, userPrompt, attemptTimeout);
+      const attemptRes = await runAttempt(
+        systemInstruction,
+        userPrompt,
+        attemptTimeout,
+        currentModelOverride
+      );
       const attemptDuration = Date.now() - attemptStart;
 
       if (attemptRes.success) {
@@ -188,6 +241,7 @@ export async function analyze(
             durationMs: attemptDuration,
             outcome: "success",
             tokenCounts: attemptRes.tokenUsage,
+            ...(hasUsedFallback ? { model_fallback_used: true } : {}),
           },
           requestId
         );
@@ -203,15 +257,16 @@ export async function analyze(
           durationMs: attemptDuration,
           outcome: attemptRes.failCode,
           tokenCounts: attemptRes.tokenUsage,
+          ...(hasUsedFallback ? { model_fallback_used: true } : {}),
         },
         requestId
       );
 
-      // Check if we can retry once
-      if (attemptNumber === 1) {
+      // Check if we can retry once on soft error
+      if (attemptNumber === 1 && !hasRetried) {
         const timeRemainingForRetry = OVERALL_DEADLINE_MS - (Date.now() - startTime);
         if (timeRemainingForRetry >= 8000) {
-          attemptNumber = 2;
+          attemptNumber++;
           hasRetried = true;
           // Add corrective instruction listing only the reason code, never user text
           systemInstruction = `${systemInstruction}\n\nCorrection for previous attempt: The previous response failed with reason code [${attemptRes.failCode}]. Ensure the response strictly adheres to the non-directive role and exact JSON schema format.`;
@@ -219,32 +274,99 @@ export async function analyze(
         }
       }
 
-      // If retry skipped or attempt 2 failed, throw BadAIOutputError
+      logger.error(
+        "analyze.error",
+        { code: "BAD_AI_OUTPUT", reason: attemptRes.failCode, attempt: attemptNumber },
+        requestId
+      );
       throw new BadAIOutputError(attemptRes.failCode);
     } catch (err: unknown) {
       if (err instanceof BadAIOutputError || err instanceof AnalysisTimeoutError) {
         throw err;
       }
 
-      // Check for upstream quota or server errors (never retry these)
-      const quotaCheck = isUpstreamQuotaOrServerError(err);
-      if (quotaCheck.isMatch) {
-        logger.error(
-          "analyze.error",
-          { reason: "ai_unavailable", status: quotaCheck.status },
-          requestId
-        );
-        throw new AIUnavailableError(quotaCheck.status);
-      }
-
       // Check for timeout / abort
       if (isAbortOrTimeout(err)) {
-        logger.error("analyze.error", { reason: "timeout" }, requestId);
+        logger.error(
+          "analyze.error",
+          { code: "TIMEOUT", reason: "timeout", attempt: attemptNumber },
+          requestId
+        );
         throw new AnalysisTimeoutError();
       }
 
+      // Check for upstream quota or rate-limit error (429)
+      const quotaCheck = isUpstreamQuotaError(err);
+      if (quotaCheck.isMatch) {
+        // Fallback model attempt if configured and not yet used
+        if (fallbackModel && !hasUsedFallback) {
+          const timeRemaining = OVERALL_DEADLINE_MS - (Date.now() - startTime);
+          if (timeRemaining >= 8000) {
+            attemptNumber++;
+            hasRetried = true;
+            hasUsedFallback = true;
+            currentModelOverride = fallbackModel;
+            continue;
+          }
+        }
+
+        logger.error(
+          "analyze.error",
+          {
+            code: "AI_QUOTA",
+            attempt: attemptNumber,
+            upstreamStatus: quotaCheck.status ?? 429,
+          },
+          requestId
+        );
+        throw new AIQuotaError(quotaCheck.status ?? 429, attemptNumber);
+      }
+
+      // Check for upstream overload or server error (5xx)
+      const overloadCheck = isUpstreamOverloadError(err);
+      if (overloadCheck.isMatch) {
+        // ONE automatic retry after about 1.5 seconds if at least 8 seconds remain
+        if (!hasOverloadRetried && !hasUsedFallback) {
+          const timeRemaining = OVERALL_DEADLINE_MS - (Date.now() - startTime);
+          if (timeRemaining >= 9500) {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            attemptNumber++;
+            hasRetried = true;
+            hasOverloadRetried = true;
+            continue;
+          }
+        }
+
+        // If overload retry failed or insufficient time for pause, try fallback model if configured
+        if (fallbackModel && !hasUsedFallback) {
+          const timeRemaining = OVERALL_DEADLINE_MS - (Date.now() - startTime);
+          if (timeRemaining >= 8000) {
+            attemptNumber++;
+            hasRetried = true;
+            hasUsedFallback = true;
+            currentModelOverride = fallbackModel;
+            continue;
+          }
+        }
+
+        logger.error(
+          "analyze.error",
+          {
+            code: "AI_UNAVAILABLE",
+            attempt: attemptNumber,
+            upstreamStatus: overloadCheck.status ?? 503,
+          },
+          requestId
+        );
+        throw new AIUnavailableError(overloadCheck.status ?? 503, attemptNumber);
+      }
+
       // Other unexpected errors
-      logger.error("analyze.error", { reason: "upstream_error" }, requestId);
+      logger.error(
+        "analyze.error",
+        { code: "SERVER_ERROR", reason: "upstream_error", attempt: attemptNumber },
+        requestId
+      );
       throw err;
     }
   }

@@ -253,4 +253,43 @@ describe("API Route: /api/analyze", () => {
     expect(JSON.stringify(body)).not.toContain("stack");
     expect(JSON.stringify(body)).not.toContain("GEMINI_API_KEY");
   });
+
+  it("returns 503 AI_QUOTA with Retry-After 30 header when AIQuotaError is thrown", async () => {
+    vi.mocked(analyzeModule.analyze).mockRejectedValueOnce(
+      new analyzeModule.AIQuotaError(429)
+    );
+
+    const req = createNextRequest({
+      body: JSON.stringify(validPayload),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(503);
+    expect(res.headers.get("retry-after")).toBe("30");
+
+    const body = await res.json();
+    expect(body.error.code).toBe("AI_QUOTA");
+    expect(body.error.message).toBe(
+      "The AI service has reached its limit for now. Please wait a minute and try again."
+    );
+  });
+
+  it("returns 503 AI_UNAVAILABLE when AIUnavailableError is thrown", async () => {
+    vi.mocked(analyzeModule.analyze).mockRejectedValueOnce(
+      new analyzeModule.AIUnavailableError(503)
+    );
+
+    const req = createNextRequest({
+      body: JSON.stringify(validPayload),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(503);
+
+    const body = await res.json();
+    expect(body.error.code).toBe("AI_UNAVAILABLE");
+    expect(body.error.message).toBe(
+      "The AI service is busy right now. Please try again in a minute."
+    );
+  });
 });

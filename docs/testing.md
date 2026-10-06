@@ -41,7 +41,7 @@ The test suite is organized into three distinct tiers:
    - Sliding-window rate limiter: allows $N$ requests, blocks at $N+1$, returns correct `Retry-After` seconds, tests LRU eviction, and handles clock skew safely.
 5. **`requestGuard-env-logger.test.ts` (12 tests)**
    - Request guard functions: HTTP method whitelist, Content-Type enforcement, 8 KB body size caps, same-origin validation, and RFC 9457 error format.
-   - Server environment: validates parsing, production vs development defaults, thinking levels, custom rate limits, origin whitelist, and error shielding.
+   - Server environment: validates parsing, production vs development defaults, thinking levels, custom rate limits, origin whitelist, fallback model validation, and error shielding.
    - Structured logger: redacts sensitive authentication keys and verifies user reasoning text is never written to logs.
 6. **`prompt.test.ts` (4 tests)**
    - Verifies prompt construction for all 5 decision types.
@@ -52,19 +52,28 @@ The test suite is organized into three distinct tiers:
    - Tests `decideSaveAction` distinguishing guest users (`prompt-sign-in`) from authenticated users (`save`).
    - Tests Firestore operations: `saveAnalysis`, `updateAnalysis`, `getAnalysis`, `deleteAnalysis`, `listAnalyses`, and `deleteAllAnalyses`.
    - Verifies client-side sorting of saved analyses descending by creation time.
-8. **`analyze.test.ts` (7 tests)**
+8. **`notes.test.ts` (6 tests)**
+   - Verifies deterministic plain text format for personal decision exports.
+   - Asserts numbered checklist for items triaged as "Worth investigating" with parenthesized finding title.
+   - Asserts explicit empty state messages for unselected checklist and blank thinking notes.
+   - Verifies zero HTML or Markdown formatting in copied text.
+9. **`analyze.test.ts` (10 tests)**
    - Simulates end-to-end analysis orchestration with mocked Gemini responses.
    - Tests retry recovery when initial attempt contains directive language or malformed JSON.
-   - Verifies that upstream 429 quota exhaustion or 503 errors fail fast without wasteful retries.
+   - Verifies upstream 429 quota error throws `AIQuotaError` immediately without retrying the same model.
+   - Verifies upstream 5xx overload is retried once after 1.5s delay when time permits, throwing `AIUnavailableError` if both fail.
+   - Verifies transparent fallback model invocation on 429 or exhausted 5xx when `GEMINI_FALLBACK_MODEL` is configured and budget remains (>= 8s), marking `model_fallback_used: true` in audit receipt.
    - Verifies 28-second deadline abort handling and skipped retry when remaining time is under 8 seconds.
 
 ### B. API Route Tests (`tests/api/`)
-1. **`analyze-route.test.ts` (11 tests)**
+1. **`analyze-route.test.ts` (13 tests)**
    - Enforces POST only (returns 405 Method Not Allowed with `Allow: POST` header for GET, PUT, DELETE, OPTIONS).
    - Enforces `application/json` Content-Type (returns 400).
    - Rejects payloads exceeding 8 KB limit (returns 413).
    - Enforces same-origin policy (returns 403 Forbidden for foreign Origins).
    - Enforces rate limiting (returns 429 with `Retry-After`).
+   - Upstream 429 quota handling: returns HTTP 503 with error code `AI_QUOTA`, header `Retry-After: 30`, and user advisory message.
+   - Upstream 5xx overload handling: returns HTTP 503 with error code `AI_UNAVAILABLE`.
    - Returns 200 with structured analysis and audit receipt for valid input.
    - Returns calm support payload for self-harm queries without invoking Gemini.
 2. **`health-route.test.ts` (1 test)**
@@ -82,13 +91,30 @@ The test suite is organized into three distinct tiers:
 2. **`results-and-safe-rendering.test.tsx` (5 tests)**
    - Verifies mutual exclusivity of triage states ("Worth investigating" vs "Already considered").
    - Verifies that Next Steps investigation checklist includes ONLY findings marked "Worth investigating".
-   - Verifies grounded citations are rendered with `<mark>` tags in the "In your words" tab.
+   - Verifies grounded citations are rendered with `<mark>` tags in the "Your words" tab.
    - Verifies safe HTML escaping without script injection or DOM element generation.
    - Verifies badge labels for `inferred` and `unknown` basis findings.
-3. **`auth-and-brand.test.tsx` (3 tests)**
+3. **`results-redesign.test.tsx` (11 tests)**
+   - Verifies single-flight submission guard in `Workspace`: rapid double-clicks on submit invoke `/api/analyze` exactly once.
+   - Verifies compact finding card rendering: title, type, basis tag, clamped observation, and 3 min-44px triage buttons with checkmark (`✓`) on selection.
+   - Verifies expandable card details with `aria-expanded` and `aria-controls`.
+   - Verifies "View highlighted in text" link navigates directly to the "Your words" tab and focuses evidence.
+   - Verifies desktop filter chips with non-zero counts and `aria-pressed`, and mobile native `<select>` dropdown.
+   - Verifies Next steps numbered `<ol>` checklist of investigation items and explicit empty state when none are marked.
+   - Verifies mobile bottom navigation (`<nav aria-label="Results sections">`), count badges, and keyboard arrow switching.
+   - Verifies "Copy my notes" clipboard integration, formatted plain text, 2s "Copied" alert, and manual copy textarea fallback.
+4. **`auth-and-brand.test.tsx` (3 tests)**
    - Tests accessibility and keyboard navigation in `SignInModal` (focus trapping and Escape restoration).
    - Verifies Header brand link navigates back to landing view without clearing draft answers in `sessionStorage`.
    - Verifies brand mark logo image (`/brand/logo-mark.png`) renders with decorative alt attributes in both Header and `SignInModal`.
+5. **`auth-modal-and-profile.test.tsx` (8 tests)**
+   - Verifies auth modal mode switching, password visibility toggle, and input validations.
+   - Verifies sign-up creates user, sets display name, and creates profile document without email verification calls.
+6. **`pending-save-hardening.test.tsx` (9 tests)**
+   - Verifies 10-minute pending-save expiry, save-flow origin binding, and single-execution guard.
+   - Verifies save failure resilience with "Try again" retry.
+7. **`sign-out-reset.test.tsx` (6 tests)**
+   - Verifies sign-out cancellation of debounced write timers, clearing of browser state, and auth modal layout.
 
 ---
 
@@ -99,10 +125,11 @@ Coverage thresholds are defined in `vitest.config.ts` for `lib/**`:
 - **Branch Coverage Target:** $\ge 80\%$
 
 ### Current Verified Coverage Results
-- **Statements:** $\mathbf{79.22\%}$ overall across entire project ($\mathbf{92.15\%}$ for `lib/**`)
-- **Branches:** $\mathbf{79.14\%}$ overall across entire project ($\mathbf{83.33\%}$ for `lib/**`)
-- **Lines:** $\mathbf{79.22\%}$ overall across entire project ($\mathbf{92.15\%}$ for `lib/**`)
-- **Functions:** $\mathbf{66.90\%}$ overall across entire project
+- **Statements:** $\mathbf{86.24\%}$ (4,578 / 5,308)
+- **Branches:** $\mathbf{82.03\%}$ (872 / 1,063)
+- **Lines:** $\mathbf{86.24\%}$ (4,578 / 5,308)
+- **Functions:** $\mathbf{75.53\%}$ (142 / 188)
+- **Total Tests:** 169 passing tests across 21 test files (0 failures).
 
 ### Coverage Exemptions
 - **`lib/server/gemini.ts`:** Excluded because live calls to Gemini require active API keys and live network access. The module's contract and error mapping are tested via upstream mocks in `tests/unit/analyze.test.ts` and `tests/api/analyze-route.test.ts`.

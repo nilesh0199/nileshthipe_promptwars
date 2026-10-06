@@ -129,6 +129,8 @@ export function Workspace({ onExit }: WorkspaceProps) {
   const startOverTriggerRef = useRef<HTMLButtonElement>(null);
   const startOverConfirmRef = useRef<HTMLButtonElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isSubmittingRef = useRef<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const currentScreen: FlowScreenConfig = WORKSPACE_SCREENS[screenIndex];
   const typeConfig = getDecisionTypeConfig(formData.decisionType || "career");
@@ -287,6 +289,9 @@ export function Workspace({ onExit }: WorkspaceProps) {
 
   const handleStartAnalysis = async () => {
     if (!formData.decisionType) return;
+    if (isSubmittingRef.current || analysisStatus === "loading") return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     setAnalysisStatus("loading");
     setAnalysisError(null);
@@ -336,6 +341,9 @@ export function Workspace({ onExit }: WorkspaceProps) {
         message: "Failed to connect to the analysis service. Please check your connection and try again.",
       });
       setAnalysisStatus("error");
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -343,11 +351,14 @@ export function Workspace({ onExit }: WorkspaceProps) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
+    isSubmittingRef.current = false;
+    setIsSubmitting(false);
     setAnalysisStatus("idle");
     setAnalysisError(null);
   };
 
   const handleContinue = () => {
+    if (isSubmittingRef.current || analysisStatus === "loading") return;
     if (!validateCurrent()) return;
 
     if (screenIndex === WORKSPACE_SCREENS.length - 1) {
@@ -358,6 +369,7 @@ export function Workspace({ onExit }: WorkspaceProps) {
   };
 
   const handleSkip = () => {
+    if (isSubmittingRef.current || analysisStatus === "loading") return;
     if (screenIndex === WORKSPACE_SCREENS.length - 1) {
       handleStartAnalysis();
     } else if (screenIndex < WORKSPACE_SCREENS.length - 1) {
@@ -553,6 +565,8 @@ export function Workspace({ onExit }: WorkspaceProps) {
                   ? "This request couldn't be accepted. Please reload the page and try again."
                   : analysisError?.code === "TIMEOUT"
                   ? "The analysis took longer than expected. Please try again."
+                  : analysisError?.code === "AI_QUOTA"
+                  ? "The AI service has reached its limit for now. Please wait a minute and try again."
                   : analysisError?.code === "SERVICE_UNAVAILABLE" ||
                     analysisError?.code === "UPSTREAM_UNAVAILABLE" ||
                     analysisError?.code === "AI_UNAVAILABLE"
@@ -1101,7 +1115,8 @@ export function Workspace({ onExit }: WorkspaceProps) {
                     <button
                       type="button"
                       onClick={handleContinue}
-                      className="min-h-[48px] px-7 py-2.5 rounded-xl font-semibold text-[16px] bg-[#18263e] text-[#faf8f5] hover:bg-[#233554] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] cursor-pointer shadow-2xs"
+                      disabled={isSubmitting}
+                      className="min-h-[48px] px-7 py-2.5 rounded-xl font-semibold text-[16px] bg-[#18263e] text-[#faf8f5] hover:bg-[#233554] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] cursor-pointer shadow-2xs"
                     >
                       {currentScreen.primaryActionLabel || "Continue"}
                     </button>
@@ -1110,7 +1125,8 @@ export function Workspace({ onExit }: WorkspaceProps) {
                       <button
                         type="button"
                         onClick={handleSkip}
-                        className="min-h-[48px] px-5 py-2.5 rounded-xl text-[16px] font-medium text-[#4e5e77] hover:text-[#18263e] hover:bg-[#f3ede2]/60 transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer"
+                        disabled={isSubmitting}
+                        className="min-h-[48px] px-5 py-2.5 rounded-xl text-[16px] font-medium text-[#4e5e77] hover:text-[#18263e] hover:bg-[#f3ede2]/60 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer"
                       >
                         Skip
                       </button>

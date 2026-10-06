@@ -36,6 +36,7 @@ Git: use only the main branch. Never create, switch to or push other branches, a
 - Firestore access only through lib/saved.ts; every document carries the owner's uid; rules are owner-only.
 - Every API route must use the shared request guard (method, content type, origin, rate limit, size).
 - Automated tests run via Vitest (`npm test` / `npm run test:coverage`). All tests must be meaningful (no snapshot tests, no `.skip`/`.only`, no asserting only on mocks). Coverage on `lib/**` must meet >= 85% lines and >= 80% branches (excluding `server/gemini.ts` which needs a real key).
+- PROMPTWARS.md contains developer-supplied facts. Never edit it or add facts to it unless explicitly asked.
 ## Commands
 - Dev: npm run dev | Lint: npm run lint | Typecheck: npm run typecheck | Test: npm test | Test Coverage: npm run test:coverage | Build: npm run build
 ## End-of-task report (required every time)

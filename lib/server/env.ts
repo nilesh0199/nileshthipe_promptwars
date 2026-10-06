@@ -13,6 +13,7 @@ export type ThinkingLevelSetting = "low" | "medium" | "high";
 export interface ServerEnv {
   GEMINI_API_KEY: string;
   GEMINI_MODEL: string;
+  GEMINI_FALLBACK_MODEL?: string;
   GEMINI_THINKING_LEVEL: ThinkingLevelSetting;
   RATE_LIMIT_MAX: number;
   RATE_LIMIT_WINDOW_SECONDS: number;
@@ -47,6 +48,16 @@ export function getEnv(): ServerEnv {
   const MODEL_REGEX = /^[a-zA-Z0-9.-]+$/;
   if (!MODEL_REGEX.test(model)) {
     errors.push("GEMINI_MODEL");
+  }
+
+  let fallbackModel: string | undefined = undefined;
+  const rawFallback = process.env.GEMINI_FALLBACK_MODEL?.trim();
+  if (rawFallback) {
+    if (!MODEL_REGEX.test(rawFallback)) {
+      errors.push("GEMINI_FALLBACK_MODEL");
+    } else if (rawFallback !== model) {
+      fallbackModel = rawFallback;
+    }
   }
 
   let thinkingLevel: ThinkingLevelSetting = "medium";
@@ -104,6 +115,7 @@ export function getEnv(): ServerEnv {
   cachedEnv = {
     GEMINI_API_KEY: apiKey!,
     GEMINI_MODEL: model!,
+    GEMINI_FALLBACK_MODEL: fallbackModel,
     GEMINI_THINKING_LEVEL: thinkingLevel,
     RATE_LIMIT_MAX: rateLimitMax,
     RATE_LIMIT_WINDOW_SECONDS: rateLimitWindowSeconds,

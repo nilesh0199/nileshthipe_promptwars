@@ -5,6 +5,7 @@ import { Workspace } from "@/components/Workspace";
 import { InfoTabs } from "@/components/landing/InfoTabs";
 import { ProductPreview } from "@/components/landing/ProductPreview";
 import { useView } from "@/components/navigation/ViewContext";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 function subscribe() {
   return () => {};
@@ -18,6 +19,7 @@ export default function HomePage() {
   );
 
   const { view, goToWorkspace, returnToLanding } = useView();
+  const { sessionEpoch } = useAuth();
   const [activeTab, setActiveTab] = useState<number>(0);
 
   const handleOpenHowItWorks = () => {
@@ -35,7 +37,7 @@ export default function HomePage() {
   }
 
   if (view === "workspace") {
-    return <Workspace onExit={returnToLanding} />;
+    return <Workspace key={sessionEpoch} onExit={returnToLanding} />;
   }
 
   return (

@@ -177,8 +177,8 @@ describe("ResultsView & Safe Rendering", () => {
 
     const user = userEvent.setup();
 
-    // Navigate to "In your words" tab
-    await user.click(screen.getByRole("tab", { name: /in your words/i }));
+    // Navigate to "Your words" tab
+    await user.click(screen.getByRole("tab", { name: /your words/i }));
 
     // Find <mark> elements
     const markElement = document.querySelector("mark");
@@ -196,11 +196,11 @@ describe("ResultsView & Safe Rendering", () => {
       />
     );
 
-    // f2 has basis 'inferred' -> displays "Inferred perspective"
-    expect(screen.getByText(/Inferred perspective/i)).toBeInTheDocument();
+    // f2 has basis 'inferred' -> displays "Inferred from your words"
+    expect(screen.getByText(/Inferred from your words/i)).toBeInTheDocument();
 
-    // f3 has basis 'unknown' -> displays "Unstated factor"
-    expect(screen.getByText(/Unstated factor/i)).toBeInTheDocument();
+    // f3 has basis 'unknown' -> displays "Not in your text, so a question"
+    expect(screen.getByText(/Not in your text, so a question/i)).toBeInTheDocument();
   });
 
   it("safely escapes HTML tags in findings and quotes without executing scripts or injecting elements", () => {

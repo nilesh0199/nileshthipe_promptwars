@@ -6,6 +6,7 @@ export interface GeminiCallParams {
   systemInstruction: string;
   userPrompt: string;
   timeoutMs: number;
+  modelOverride?: string;
 }
 
 export interface GeminiCallResult {
@@ -41,7 +42,7 @@ export async function callGemini(params: GeminiCallParams): Promise<GeminiCallRe
     }
 
     const response = await ai.models.generateContent({
-      model: env.GEMINI_MODEL,
+      model: params.modelOverride || env.GEMINI_MODEL,
       contents: params.userPrompt,
       config: {
         systemInstruction: params.systemInstruction,

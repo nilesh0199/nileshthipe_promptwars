@@ -16,13 +16,14 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  sendEmailVerification,
   sendPasswordResetEmail,
   updateProfile,
 } from "firebase/auth";
+import { useRouter } from "next/navigation";
 import { auth, firebaseConfigured } from "@/lib/firebase";
 import { resolveDisplayName } from "@/lib/profile";
 import { saveProfile, ensureProfile } from "@/lib/profileStore";
+import { cancelPendingWriteTimers, clearUserScopedClientState } from "@/lib/clientState";
 
 export type SignInMethod = "google" | "password" | null;
 
@@ -32,8 +33,9 @@ export interface AuthContextValue {
   configured: boolean;
   displayName: string;
   email: string | null;
-  emailVerified: boolean;
   signInMethod: SignInMethod;
+  sessionEpoch: number;
+  signOutNotice: string | null;
   signInWithGoogle: () => Promise<User | null>;
   signUpWithEmail: (params: {
     name: string;
@@ -45,13 +47,12 @@ export interface AuthContextValue {
     password: string;
   }) => Promise<User | null>;
   sendPasswordReset: (email: string) => Promise<string>;
-  resendVerification: () => Promise<void>;
   signOut: () => Promise<void>;
   authError: string | null;
   clearAuthError: () => void;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
  * Maps Firebase Auth error codes to calm, human-friendly messages without account enumeration.
@@ -98,9 +99,12 @@ function computeSignInMethod(user: User | null): SignInMethod {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(Boolean(firebaseConfigured && auth));
   const [authError, setAuthError] = useState<string | null>(null);
+  const [sessionEpoch, setSessionEpoch] = useState<number>(0);
+  const [signOutNotice, setSignOutNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!firebaseConfigured || !auth) {
@@ -176,17 +180,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 1. Update auth display name
         await updateProfile(newUser, { displayName: trimmedName });
 
-        // 2. Send email verification
-        try {
-          await sendEmailVerification(newUser);
-        } catch {
-          // Non-blocking
-        }
-
-        // 3. Create profile document
+        // 2. Create profile document
         await saveProfile(newUser.uid, { displayName: trimmedName });
 
-        // 4. Refresh auth state
+        // 3. Refresh auth state
         if (typeof newUser.reload === "function") {
           await newUser.reload();
         }
@@ -254,23 +251,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const resendVerification = useCallback(async (): Promise<void> => {
-    if (!auth?.currentUser) return;
-    try {
-      await sendEmailVerification(auth.currentUser);
-    } catch (err: unknown) {
-      const errorCode = (err as { code?: string })?.code || "";
-      const msg = mapAuthError(errorCode);
-      setAuthError(msg);
-    }
-  }, []);
-
   const signOut = useCallback(async (): Promise<void> => {
+    // 1. Cancel any pending debounced write timers
+    cancelPendingWriteTimers();
+
+    // 2. Clear all user-scoped client state from browser storage
+    clearUserScopedClientState();
+
+    // 3. Sign out of Firebase
     if (auth) {
-      await firebaseSignOut(auth);
+      try {
+        await firebaseSignOut(auth);
+      } catch {
+        // Non-fatal if network error
+      }
     }
+
+    // 4. Reset user and increment session epoch to unmount/reset in-memory components
     setUser(null);
-  }, []);
+    setSessionEpoch((prev) => prev + 1);
+
+    // 5. Return to landing page
+    try {
+      router.push("/");
+    } catch {
+      // Safe in test environments
+    }
+
+    // 6. Announce sign-out confirmation in polite aria-live region
+    setSignOutNotice("You've been signed out.");
+    setTimeout(() => {
+      setSignOutNotice(null);
+    }, 4000);
+  }, [router]);
 
   const displayName = resolveDisplayName({
     authName: user?.displayName,
@@ -285,19 +298,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         configured: firebaseConfigured,
         displayName,
         email: user?.email || null,
-        emailVerified: Boolean(user?.emailVerified),
         signInMethod: computeSignInMethod(user),
+        sessionEpoch,
+        signOutNotice,
         signInWithGoogle,
         signUpWithEmail,
         signInWithEmail,
         sendPasswordReset,
-        resendVerification,
         signOut,
         authError,
         clearAuthError,
       }}
     >
       {children}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {signOutNotice}
+      </div>
     </AuthContext.Provider>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { SignInModal } from "@/components/auth/SignInModal";
 import { getProfile, saveProfile } from "@/lib/profileStore";
@@ -38,8 +39,20 @@ export default function ProfilePage() {
   const ageInputRef = useRef<HTMLInputElement>(null);
   const professionInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset local state during render when user changes or signs out
+  const [prevUid, setPrevUid] = useState<string | null>(user?.uid ?? null);
+  if (prevUid !== (user?.uid ?? null)) {
+    setPrevUid(user?.uid ?? null);
+    setFormData({ displayName: "", age: "", profession: "" });
+    setInitialData({ displayName: "", age: "", profession: "" });
+    setSavedStatus(null);
+    setServerError(null);
+  }
+
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (!user || authLoading) {
+      return;
+    }
 
     let isMounted = true;
 
@@ -72,7 +85,7 @@ export default function ProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [user, authLoading, authDisplayName]);
+  }, [user, user?.uid, authLoading, authDisplayName]);
 
   const hasChanges =
     formData.displayName.trim() !== initialData.displayName.trim() ||
@@ -141,8 +154,14 @@ export default function ProfilePage() {
     return (
       <div className="w-full max-w-4xl mx-auto py-8 sm:py-12">
         <div className="bg-[#faf8f5] border border-[#dbd4c7] rounded-2xl p-8 sm:p-12 text-center max-w-xl mx-auto space-y-5 shadow-xs">
-          <div className="w-12 h-12 mx-auto rounded-xl bg-[#f3ede2] flex items-center justify-center text-[#18263e] font-serif font-bold text-2xl select-none">
-            P
+          <div className="w-12 h-12 mx-auto rounded-xl bg-[#18263e] flex items-center justify-center overflow-hidden shrink-0 select-none">
+            <Image
+              src="/brand/logo-mark.png"
+              width={48}
+              height={48}
+              alt=""
+              className="w-12 h-12 rounded-xl object-cover"
+            />
           </div>
           <div className="space-y-2">
             <h1 className="font-serif font-bold text-2xl sm:text-3xl text-[#18263e]">

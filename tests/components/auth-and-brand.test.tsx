@@ -160,4 +160,24 @@ describe("SignInModal & Brand Link", () => {
       expect(img).toHaveAttribute("alt", "");
     });
   });
+
+  it("renders fully opaque sticky header with solid background, border, and no blur", () => {
+    render(
+      <authProviderModule.AuthProvider>
+        <ViewProvider>
+          <Header />
+        </ViewProvider>
+      </authProviderModule.AuthProvider>
+    );
+
+    const header = document.querySelector("header");
+    expect(header).toBeInTheDocument();
+    expect(header?.className).toContain("bg-[#faf8f5]");
+    expect(header?.className).toContain("sticky");
+    expect(header?.className).toContain("top-0");
+    expect(header?.className).toContain("h-16");
+    expect(header?.className).toContain("border-b");
+    expect(header?.className).not.toContain("backdrop-blur");
+    expect(header?.className).not.toContain("/90");
+  });
 });

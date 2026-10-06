@@ -44,8 +44,18 @@ export default function SavedAnalysesPage() {
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  // Reset saved analyses state during render when user changes or signs out
+  const [prevUid, setPrevUid] = useState<string | null>(user?.uid ?? null);
+  if (prevUid !== (user?.uid ?? null)) {
+    setPrevUid(user?.uid ?? null);
+    setAnalyses([]);
+    setError(null);
+  }
+
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (!user || authLoading) {
+      return;
+    }
 
     let isMounted = true;
 
@@ -53,12 +63,15 @@ export default function SavedAnalysesPage() {
       .then((records) => {
         if (isMounted) {
           setAnalyses(records);
-          setLoading(false);
         }
       })
       .catch(() => {
         if (isMounted) {
           setError("We couldn't load your saved analyses. Please check your connection and try again.");
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
           setLoading(false);
         }
       });
@@ -66,7 +79,7 @@ export default function SavedAnalysesPage() {
     return () => {
       isMounted = false;
     };
-  }, [user, authLoading]);
+  }, [user, user?.uid, authLoading]);
 
   const handleRetry = () => {
     if (!user) return;

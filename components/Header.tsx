@@ -5,11 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "./auth/AuthProvider";
 import { SignInModal } from "./auth/SignInModal";
-import { EmailVerificationBanner } from "./auth/EmailVerificationBanner";
 import { useView } from "./navigation/ViewContext";
+import { clearPendingSave } from "@/lib/clientState";
 
 export function Header() {
-  const { user, loading, displayName, email, emailVerified, signInMethod, signOut } = useAuth();
+  const { user, loading, displayName, email, signOut } = useAuth();
   const { returnToLanding } = useView();
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -52,8 +52,8 @@ export function Header() {
 
   return (
     <>
-      <header className="w-full border-b border-[#dbd4c7] bg-[#faf8f5]/90 backdrop-blur-xs sticky top-0 z-30">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
+      <header className="w-full border-b border-[#dbd4c7] bg-[#faf8f5] sticky top-0 z-30 h-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-full flex items-center justify-between gap-4">
           <button
             type="button"
             onClick={(e) => {
@@ -120,11 +120,6 @@ export function Header() {
                           {email}
                         </p>
                       )}
-                      {!emailVerified && signInMethod === "password" && (
-                        <span className="inline-block mt-1.5 text-[11px] font-semibold text-[#b46b19] bg-[#fdf7ee] px-2 py-0.5 rounded border border-[#ebd1a4]">
-                          Email not verified
-                        </span>
-                      )}
                     </div>
 
                     <div className="py-1">
@@ -165,7 +160,10 @@ export function Header() {
               <button
                 ref={triggerRef}
                 type="button"
-                onClick={() => setIsSignInModalOpen(true)}
+                onClick={() => {
+                  clearPendingSave();
+                  setIsSignInModalOpen(true);
+                }}
                 className="min-h-[44px] px-3.5 py-1.5 text-[15px] sm:text-base font-medium text-[#18263e] bg-transparent border border-[#dbd4c7] rounded-lg hover:bg-[#f3ede2] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] cursor-pointer"
               >
                 Log in / Sign up
@@ -175,13 +173,11 @@ export function Header() {
         </div>
       </header>
 
-      {/* Dismissible email verification notice for unverified accounts */}
-      <EmailVerificationBanner />
-
       <SignInModal
         isOpen={isSignInModalOpen}
         onClose={() => setIsSignInModalOpen(false)}
         triggerRef={triggerRef}
+        initiatedBySave={false}
       />
     </>
   );

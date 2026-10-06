@@ -163,6 +163,41 @@ describe("AuthModal & Profile Page Component Integration", () => {
           { displayName: "Margaret Hamilton" }
         );
       });
+
+      expect(mockSendEmailVerification).not.toHaveBeenCalled();
+    });
+
+    it("sign-up does not call sendEmailVerification", async () => {
+      const mockUser = {
+        uid: "new_user_999",
+        displayName: null,
+        email: "ada@lovelace.org",
+        reload: vi.fn(),
+      };
+
+      mockCreateUserWithEmailAndPassword.mockResolvedValueOnce({
+        user: mockUser,
+      });
+
+      render(
+        <authProviderModule.AuthProvider>
+          <AuthModal isOpen={true} onClose={() => {}} initialMode="signup" />
+        </authProviderModule.AuthProvider>
+      );
+
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText(/^name/i), "Ada Lovelace");
+      await user.type(screen.getByLabelText(/^email/i), "ada@lovelace.org");
+      await user.type(screen.getByLabelText(/^password/i), "analytical-engine-1843");
+
+      await user.click(screen.getByRole("button", { name: /^create account$/i }));
+
+      await waitFor(() => {
+        expect(mockCreateUserWithEmailAndPassword).toHaveBeenCalled();
+      });
+
+      expect(mockSendEmailVerification).not.toHaveBeenCalled();
     });
   });
 
@@ -184,18 +219,18 @@ describe("AuthModal & Profile Page Component Integration", () => {
 
     it("loads profile data and saves valid updates", async () => {
       vi.spyOn(authProviderModule, "useAuth").mockReturnValue({
-        user: { uid: "test_uid", email: "scientist@lab.edu", emailVerified: true } as unknown as User,
+        user: { uid: "test_uid", email: "scientist@lab.edu" } as unknown as User,
         loading: false,
         configured: true,
         displayName: "Dr. Marie Curie",
         email: "scientist@lab.edu",
-        emailVerified: true,
         signInMethod: "password",
+        sessionEpoch: 0,
+        signOutNotice: null,
         signInWithGoogle: vi.fn(),
         signUpWithEmail: vi.fn(),
         signInWithEmail: vi.fn(),
         sendPasswordReset: vi.fn(),
-        resendVerification: vi.fn(),
         signOut: vi.fn(),
         authError: null,
         clearAuthError: vi.fn(),
@@ -249,18 +284,18 @@ describe("AuthModal & Profile Page Component Integration", () => {
   describe("Header Menu profile details", () => {
     it("renders user displayName beneath the initial avatar circle", async () => {
       vi.spyOn(authProviderModule, "useAuth").mockReturnValue({
-        user: { uid: "u1", email: "user@domain.com", emailVerified: false } as unknown as User,
+        user: { uid: "u1", email: "user@domain.com" } as unknown as User,
         loading: false,
         configured: true,
         displayName: "Katherine Johnson",
         email: "user@domain.com",
-        emailVerified: false,
         signInMethod: "password",
+        sessionEpoch: 0,
+        signOutNotice: null,
         signInWithGoogle: vi.fn(),
         signUpWithEmail: vi.fn(),
         signInWithEmail: vi.fn(),
         sendPasswordReset: vi.fn(),
-        resendVerification: vi.fn(),
         signOut: vi.fn(),
         authError: null,
         clearAuthError: vi.fn(),
@@ -279,7 +314,7 @@ describe("AuthModal & Profile Page Component Integration", () => {
       const menu = screen.getByRole("menu");
       expect(menu).toHaveTextContent("Katherine Johnson");
       expect(menu).toHaveTextContent("user@domain.com");
-      expect(menu).toHaveTextContent(/email not verified/i);
+      expect(menu).not.toHaveTextContent(/email not verified/i);
 
       // Verify profile and analyses navigation links
       expect(screen.getByRole("menuitem", { name: /my profile/i })).toBeInTheDocument();

@@ -3,21 +3,26 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { useAuth } from "./AuthProvider";
+import { clearPendingSave } from "@/lib/clientState";
 
 export interface SignInModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   onSuccess?: () => void;
   triggerRef?: React.RefObject<HTMLElement | null>;
   initialMode?: "login" | "signup";
+  initiatedBySave?: boolean;
 }
 
 export function AuthModal({
   isOpen,
   onClose,
+  onDismiss,
   onSuccess,
   triggerRef,
   initialMode = "login",
+  initiatedBySave = false,
 }: SignInModalProps) {
   const {
     signInWithGoogle,
@@ -43,6 +48,7 @@ export function AuthModal({
     email?: string;
     password?: string;
   }>({});
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const firstFocusableRef = useRef<HTMLButtonElement>(null);
@@ -61,6 +67,21 @@ export function AuthModal({
     }
   }
 
+  // Clear any stale pending-save payload if modal was opened without initiatedBySave
+  useEffect(() => {
+    if (isOpen && !initiatedBySave) {
+      clearPendingSave();
+    }
+  }, [isOpen, initiatedBySave]);
+
+  const handleDismiss = useCallback(() => {
+    clearPendingSave();
+    if (onDismiss) {
+      onDismiss();
+    }
+    onClose();
+  }, [onClose, onDismiss]);
+
   // Focus trap & Escape key handler
   useEffect(() => {
     if (!isOpen) return;
@@ -77,7 +98,7 @@ export function AuthModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        handleDismiss();
         return;
       }
 
@@ -115,7 +136,7 @@ export function AuthModal({
       document.body.style.overflow = originalOverflow;
       previousActiveElement?.focus();
     };
-  }, [isOpen, onClose, triggerRef]);
+  }, [isOpen, handleDismiss, triggerRef]);
 
   const handleContinueWithGoogle = useCallback(async () => {
     clearAuthError();
@@ -228,7 +249,7 @@ export function AuthModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#18263e]/40 backdrop-blur-xs"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isBusy) {
-          onClose();
+          handleDismiss();
         }
       }}
     >
@@ -238,45 +259,81 @@ export function AuthModal({
         aria-modal="true"
         aria-labelledby="auth-modal-title"
         aria-describedby="auth-modal-desc"
-        className="w-full max-w-md bg-[#faf8f5] border border-[#dbd4c7] rounded-2xl p-6 sm:p-7 shadow-lg space-y-5 animate-in fade-in duration-200"
+        className="w-[calc(100vw-2rem)] sm:w-full max-w-md max-h-[calc(100dvh-2rem)] flex flex-col bg-[#faf8f5] border border-[#dbd4c7] rounded-2xl shadow-lg animate-in fade-in duration-200 overflow-hidden pb-[env(safe-area-inset-bottom)]"
       >
-        {/* Brand Header */}
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/brand/logo-mark.png"
-              width={24}
-              height={24}
-              alt=""
-              className="w-6 h-6 rounded-[6px] overflow-hidden object-cover shrink-0 select-none"
-            />
-            <span className="text-[13px] font-bold uppercase tracking-wider text-[#b46b19]">
-              Perspectra Account
-            </span>
+        {/* Pinned Header */}
+        <div
+          className={`shrink-0 bg-[#faf8f5] px-5 sm:px-6 pt-5 sm:pt-6 pb-3 sm:pb-4 transition-all ${
+            isScrolled
+              ? "border-b border-[#dbd4c7] shadow-xs"
+              : "border-b border-transparent"
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/brand/logo-mark.png"
+                width={24}
+                height={24}
+                alt=""
+                className="w-6 h-6 rounded-[6px] overflow-hidden object-cover shrink-0 select-none"
+              />
+              <span className="text-[13px] font-bold uppercase tracking-wider text-[#b46b19]">
+                Perspectra Account
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleDismiss}
+              aria-label="Close"
+              className="min-w-[44px] min-h-[44px] -mr-2 -mt-2 flex items-center justify-center rounded-lg text-[#6c7c94] hover:text-[#18263e] hover:bg-[#f3ede2] transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
           </div>
 
           <h2
             id="auth-modal-title"
-            className="font-serif font-bold text-[#18263e] text-[22px] sm:text-[24px]"
+            className="font-serif font-bold text-[#18263e] text-[22px] sm:text-[24px] mt-2"
           >
             {mode === "reset"
               ? "Reset your password"
               : mode === "signup"
               ? "Create your account"
-              : "Sign in to save your analyses"}
+              : "Welcome back"}
           </h2>
 
           <p
             id="auth-modal-desc"
-            className="text-[16px] text-[#4e5e77] leading-relaxed"
+            className="text-[15px] sm:text-[16px] text-[#4e5e77] leading-relaxed mt-1"
           >
             {mode === "reset"
               ? "Enter your email address to receive a password reset link."
               : mode === "signup"
-              ? "Create a private account to save and revisit your analyses."
-              : "Sign in to save your analyses. They stay private to your account."}
+              ? "A private account to save and revisit your analyses."
+              : "Log in to save and revisit your analyses. They stay private to your account."}
           </p>
         </div>
+
+        {/* Scrollable Body */}
+        <div
+          onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 4)}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 sm:px-6 pb-5 sm:pb-6 space-y-4"
+        >
 
         {/* Unconfigured Notice */}
         {!configured && (
@@ -557,7 +614,7 @@ export function AuthModal({
         </form>
 
         {/* Footer Navigation within Modal */}
-        <div className="pt-2 border-t border-[#f3ede2] text-center text-[15px] text-[#6c7c94]">
+        <div className="pt-2 border-t border-[#f3ede2] flex flex-col items-center gap-2 text-center text-[15px] text-[#6c7c94]">
           {mode === "reset" ? (
             <button
               type="button"
@@ -601,7 +658,16 @@ export function AuthModal({
               </button>
             </p>
           )}
+
+          <button
+            type="button"
+            onClick={handleDismiss}
+            className="min-h-[44px] px-3 py-1 text-[15px] text-[#6c7c94] hover:text-[#18263e] underline cursor-pointer"
+          >
+            Not now
+          </button>
         </div>
+      </div>
       </div>
     </div>
   );

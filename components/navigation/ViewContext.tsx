@@ -6,10 +6,12 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { STORAGE_KEY } from "@/components/Workspace";
+import { AuthContext } from "@/components/auth/AuthProvider";
 
 interface ViewContextValue {
   view: "landing" | "workspace";
@@ -40,6 +42,17 @@ export function ViewProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [view, setView] = useState<"landing" | "workspace">(getInitialView);
+
+  const authContext = useContext(AuthContext);
+  const sessionEpoch = authContext?.sessionEpoch ?? 0;
+  const prevEpochRef = useRef(sessionEpoch);
+
+  useEffect(() => {
+    if (sessionEpoch !== prevEpochRef.current) {
+      prevEpochRef.current = sessionEpoch;
+      setView("landing");
+    }
+  }, [sessionEpoch]);
 
   const persistView = (newView: "landing" | "workspace") => {
     if (typeof window !== "undefined") {

@@ -3,6 +3,7 @@ import { AnalyzeRequestSchema, type SupportResponse } from "@/lib/schema";
 import {
   analyze,
   BadAIOutputError,
+  AIQuotaError,
   AIUnavailableError,
   AnalysisTimeoutError,
 } from "@/lib/server/analyze";
@@ -238,11 +239,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     if (err instanceof BadAIOutputError) {
-      logger.error(
-        "analyze.error",
-        { code: "BAD_AI_OUTPUT", reason: err.reasonCode },
-        requestId
-      );
       return createGuardErrorResponse(
         502,
         "BAD_AI_OUTPUT",
@@ -251,12 +247,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (err instanceof AIUnavailableError) {
-      logger.error(
-        "analyze.error",
-        { code: "AI_UNAVAILABLE", upstreamStatus: err.status },
-        requestId
+    if (err instanceof AIQuotaError) {
+      return createGuardErrorResponse(
+        503,
+        "AI_QUOTA",
+        "The AI service has reached its limit for now. Please wait a minute and try again.",
+        requestId,
+        { "Retry-After": "30" }
       );
+    }
+
+    if (err instanceof AIUnavailableError) {
       return createGuardErrorResponse(
         503,
         "AI_UNAVAILABLE",
@@ -266,7 +267,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (err instanceof AnalysisTimeoutError) {
-      logger.error("analyze.error", { code: "TIMEOUT" }, requestId);
       return createGuardErrorResponse(
         504,
         "TIMEOUT",

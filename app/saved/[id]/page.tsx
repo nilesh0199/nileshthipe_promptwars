@@ -19,8 +19,19 @@ export default function SavedAnalysisDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [notFound, setNotFound] = useState<boolean>(false);
 
+  // Reset detail state during render when user changes or signs out
+  const [prevUid, setPrevUid] = useState<string | null>(user?.uid ?? null);
+  if (prevUid !== (user?.uid ?? null)) {
+    setPrevUid(user?.uid ?? null);
+    setRecord(null);
+    if (!user) {
+      setNotFound(true);
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    if (authLoading || !user || !id || typeof id !== "string") {
+    if (!user || authLoading || !id || typeof id !== "string") {
       return;
     }
 
@@ -31,6 +42,7 @@ export default function SavedAnalysisDetailPage() {
         if (!isMounted) return;
         if (!data || data.uid !== user.uid) {
           setNotFound(true);
+          setRecord(null);
         } else {
           setRecord(data);
         }
@@ -38,6 +50,7 @@ export default function SavedAnalysisDetailPage() {
       .catch(() => {
         if (isMounted) {
           setNotFound(true);
+          setRecord(null);
         }
       })
       .finally(() => {
@@ -49,7 +62,7 @@ export default function SavedAnalysisDetailPage() {
     return () => {
       isMounted = false;
     };
-  }, [id, user, authLoading]);
+  }, [id, user, user?.uid, authLoading]);
 
   if (authLoading || loading) {
     return (
