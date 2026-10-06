@@ -13,7 +13,7 @@ PromptWars is a hackathon format run by Google for Developers and Hack2skill in 
 | In collaboration with | Engineering India, Hack2skill, GDG, GDG Nagpur |
 | Date | 4 October 2026 |
 | Time to build | 3 hours. Solo participation. |
-| Participants | about 300 |
+| Participants | 200+ |
 | Judging | an AI-based score; only the top 16 were invited to pitch |
 
 ## The problem statement: The Blind Spot
