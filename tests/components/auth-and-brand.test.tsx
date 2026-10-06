@@ -195,7 +195,9 @@ describe("SignInModal & Brand Link", () => {
     const ctaBtn = screen.getByRole("button", { name: /examine my decision/i });
     expect(ctaBtn).toBeInTheDocument();
     expect(ctaBtn.className).toContain("min-h-[52px]");
+    expect(ctaBtn.className).toContain("min-w-[280px]");
     expect(ctaBtn.className).toContain("font-bold");
+    expect(screen.queryByRole("button", { name: /^how it works$/i })).not.toBeInTheDocument();
 
     const user = userEvent.setup();
     await user.click(ctaBtn);

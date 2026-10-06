@@ -22,10 +22,6 @@ export default function HomePage() {
   const { sessionEpoch } = useAuth();
   const [activeTab, setActiveTab] = useState<number>(0);
 
-  const handleOpenHowItWorks = () => {
-    setActiveTab(1); // Select "How it works" tab (index 1)
-  };
-
   if (!isMounted) {
     return (
       <div className="w-full max-w-6xl mx-auto py-4">
@@ -72,25 +68,17 @@ export default function HomePage() {
             Describe a decision and your reasoning. Perspectra shows the assumptions and open questions in your thinking, in your own words, and never decides for you.
           </p>
 
-          {/* Action Buttons */}
+          {/* Action Button */}
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button
               type="button"
               onClick={goToWorkspace}
-              className="min-h-[52px] sm:min-h-[56px] px-7 sm:px-8 py-3.5 rounded-2xl font-bold text-[18px] sm:text-[20px] bg-[#18263e] text-[#faf8f5] hover:bg-[#233554] transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] shadow-xs cursor-pointer inline-flex items-center gap-2.5"
+              className="min-h-[52px] sm:min-h-[56px] min-w-[280px] sm:min-w-[340px] px-10 sm:px-12 py-3.5 rounded-2xl font-bold text-[18px] sm:text-[20px] bg-[#18263e] text-[#faf8f5] hover:bg-[#233554] transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] shadow-xs cursor-pointer inline-flex items-center justify-center gap-3"
             >
               <span>Examine my decision</span>
               <span aria-hidden="true" className="text-lg sm:text-xl font-bold">
                 &rarr;
               </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenHowItWorks}
-              className="min-h-[44px] px-4 py-2.5 rounded-xl text-base sm:text-[17px] font-medium text-[#18263e] hover:text-[#b46b19] hover:bg-[#f3ede2]/60 transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer"
-            >
-              How it works
             </button>
           </div>
 

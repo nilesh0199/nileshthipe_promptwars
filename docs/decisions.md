@@ -210,3 +210,12 @@ D9: Single main branch. Solo, short competition. Work is committed by the develo
   3. Removed certainty rating from results: Removed the 1–5 slider and "Before analysis" badge from `NextStepsTab`. Retained the prioritized investigation checklist, personal reflections textarea, and note export.
   4. End-of-tab sequential navigation: Added prominent forward navigation buttons at the bottom of each tab panel (Findings &rarr; Your words &rarr; Premortem &rarr; Next steps) and previous navigation buttons, smoothly scrolling to top and focusing headings on change.
 - **Consequence:** Faster path from prompt to analysis, zero artificial metric distractions, improved reading ergonomics on long findings pages, and clear call-to-action on the landing screen.
+
+## D40: Landing page CTA refinement (single elongated 'Examine my decision' button) and mobile AI service diagnostic
+- **Context:**
+  1. Having a secondary "How it works" button directly next to the primary CTA divided attention and weakened the invitation to begin. A wide, self-evident CTA button provides clearer visual hierarchy and immediate affordance.
+  2. On mobile devices, users occasionally encountered: *"We couldn't complete the analysis. The AI service is busy right now. Please try again in a minute."*
+- **Decision:**
+  1. Landing CTA refinement: Removed the secondary "How it works" button next to "Examine my decision". Elongated the primary CTA horizontally (`min-w-[280px] sm:min-w-[340px] px-10 sm:px-12 py-3.5 rounded-2xl font-bold justify-center`), giving it prominent visual weight as the sole hero entry point.
+  2. Mobile AI Busy Diagnostic: Traced the error message to client error code `AI_UNAVAILABLE` (HTTP 503). In `app/api/analyze/route.ts` and `lib/server/analyze.ts`, this occurs when: (a) upstream Gemini returns 503 / UNAVAILABLE / overloaded and the single retry also fails while `GEMINI_FALLBACK_MODEL` is unconfigured, or (b) the deployment instance encounters global hourly saturation. On mobile cellular networks, carrier CGNAT (shared IP) can also cause concurrent burst limits, and mobile latency combined with Gemini thinking (8–15s) risks approaching edge serverless timeouts. Configuring a stable `GEMINI_FALLBACK_MODEL` and checking deployment logs provides robust upstream failover.
+- **Consequence:** Clean, focused hero action without redundant secondary buttons; documented diagnostic guidelines for mobile connectivity and upstream AI resilience.
