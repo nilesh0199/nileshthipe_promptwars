@@ -1,6 +1,6 @@
 import { DecisionInput } from "./types";
 
-export type FlowScreenId = "type" | "decision" | "reasons" | "context" | "certainty";
+export type FlowScreenId = "type" | "decision" | "reasons" | "context";
 
 export interface FlowScreenConfig {
   id: FlowScreenId;
@@ -43,14 +43,6 @@ export const WORKSPACE_SCREENS: FlowScreenConfig[] = [
     whyWeAsk: "Facts you know, things you're unsure about, deadlines. All optional.",
     field: "context",
     rows: 5,
-    required: false,
-    canSkip: true,
-  },
-  {
-    id: "certainty",
-    heading: "How sure do you feel right now?",
-    whyWeAsk: "Just for you. The AI never sees this.",
-    field: "certaintyBefore",
     required: false,
     canSkip: true,
     primaryActionLabel: "Show me another perspective",

@@ -32,7 +32,7 @@ People often decide based on the information most visible to them and may overlo
 - **One question per screen:** Step-by-step interview flow with progress indicators, back navigation, and inline character counts.
 - **Eight structured decision types:** Contextual framing across Career, Education, Relocation, Finance, Relationship, Health & Lifestyle, Projects & Creative, and Other without imposing rigid rules.
 - **Built-in realistic examples:** Pre-populated scenarios allowing immediate exploration without typing.
-- **Optional context and baseline certainty:** Context and baseline certainty rating prompts that can be completed or skipped.
+- **Optional context step:** An optional context prompt (facts, uncertainties, deadlines) that can be completed or skipped directly to start analysis.
 - **Continuous local draft preservation:** Form state is saved to browser session storage (`perspectra_workspace_v2`) so work is preserved across refreshes.
 
 ### Analysis
@@ -46,10 +46,10 @@ People often decide based on the information most visible to them and may overlo
 ### Results
 - **Two-column masonry layout on desktop:** Balanced two-column findings cards (`columns-1 lg:columns-2`) with expandable disclosures for grounded evidence, reflection questions, and checks.
 - **Mobile fixed bottom navigation:** Dedicated bottom bar (screens below 1024px) keeping section navigation in thumb reach with live count badges.
+- **End-of-tab sequential navigation:** Prominent previous and next action buttons at the bottom of each tab panel allow smooth section traversal without scrolling back up to the tab header.
 - **Three-way mutual exclusivity triage:** Findings are triaged into "Worth investigating", "Noted", or "Dismissed" with live tally feedback.
 - **Quote highlighting:** Links directly to the "In your words" tab with background quote emphasis.
 - **Dynamic investigation checklist:** Collects all items marked "Worth investigating" into a structured action list on the Next steps tab.
-- **Certainty reflection prompt:** Compares post-analysis mindset against baseline certainty without making value judgements.
 - **Plain-text note export:** Pure, deterministic note formatter (`formatNotes()`) with one-click clipboard copying and fallback manual textarea.
 
 ### Accounts and saving
@@ -67,7 +67,7 @@ People often decide based on the information most visible to them and may overlo
 - **Text sanitisation:** Normalises input text to Unicode NFC and strips control characters and bidirectional overrides.
 - **Crisis-language interceptor:** Halts model execution when explicit first-person self-harm text is detected, returning verified helpline resources (Tele-MANAS for India, local emergency services) without logging user text.
 - **Owner-only database access:** Firestore security rules restrict reads, writes, and deletes to the authenticated owner.
-- **Certainty rating privacy:** Baseline certainty (`certaintyBefore`) is strictly for user reflection and is rejected with HTTP 400 if included in requests to `/api/analyze`.
+- **Strict request payload validation:** Server-side request schemas reject unknown or client-injected fields with HTTP 400.
 
 ### Accessibility
 - **WCAG AA contrast:** All foreground and background pairings meet contrast requirements.

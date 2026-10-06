@@ -12,9 +12,9 @@ interface NextStepsTabProps {
   findings: Finding[];
   triageMap: Record<string, TriageChoice>;
   onSwitchToFindings: () => void;
-  certaintyBefore: number | null;
-  certaintyAfter: number | null;
-  onSetCertaintyAfter: (val: number) => void;
+  certaintyBefore?: number | null;
+  certaintyAfter?: number | null;
+  onSetCertaintyAfter?: (val: number) => void;
   personalNotes: string;
   onChangePersonalNotes: (notes: string) => void;
   savedDocId: string | null;
@@ -28,9 +28,6 @@ export function NextStepsTab({
   findings,
   triageMap,
   onSwitchToFindings,
-  certaintyBefore,
-  certaintyAfter,
-  onSetCertaintyAfter,
   personalNotes,
   onChangePersonalNotes,
   savedDocId,
@@ -139,67 +136,7 @@ export function NextStepsTab({
         )}
       </section>
 
-      {/* 2. How sure do you feel now? */}
-      <section
-        aria-labelledby="certainty-now-heading"
-        className="bg-[#ffffff] rounded-2xl border border-[#dbd4c7] p-5 sm:p-6 space-y-3.5 shadow-2xs"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f3ede2] pb-2">
-          <div>
-            <h2 id="certainty-now-heading" className="font-serif font-bold text-[#18263e] text-[20px]">
-              How sure do you feel now?
-            </h2>
-            <p className="text-[14px] text-[#6c7c94]">
-              Reflect on your confidence after reviewing assumptions and unseen risks.
-            </p>
-          </div>
-
-          {certaintyBefore !== null && (
-            <div className="text-[14px] font-medium text-[#4e5e77] bg-[#f3ede2] px-2.5 py-1 rounded-md">
-              Before analysis: <strong className="text-[#18263e]">{certaintyBefore}</strong>/5
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2 pt-1">
-          <div
-            className="flex items-center gap-2"
-            role="radiogroup"
-            aria-label="Certainty rating after analysis"
-          >
-            {[1, 2, 3, 4, 5].map((level) => {
-              const isSelected = certaintyAfter === level;
-              return (
-                <button
-                  key={level}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  onClick={() => onSetCertaintyAfter(level)}
-                  className={`min-h-[44px] min-w-[44px] rounded-xl border text-[15px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer flex items-center justify-center ${
-                    isSelected
-                      ? "bg-[#18263e] text-[#faf8f5] border-[#18263e] shadow-2xs"
-                      : "bg-[#ffffff] text-[#18263e] border-[#dbd4c7] hover:border-[#b46b19] hover:bg-[#faf8f5]"
-                  }`}
-                >
-                  {level}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex justify-between items-center text-[14px] text-[#6c7c94] px-1 max-w-xs">
-            <span>1 = Uncertain</span>
-            <span>5 = Completely clear</span>
-          </div>
-
-          <p className="text-[14px] text-[#6c7c94] pt-1">
-            There is no right direction. Staying the same is fine too.
-          </p>
-        </div>
-      </section>
-
-      {/* 3. Where my thinking is now */}
+      {/* 2. Where my thinking is now */}
       <section
         aria-labelledby="thinking-now-heading"
         className="bg-[#ffffff] rounded-2xl border border-[#dbd4c7] p-5 sm:p-6 space-y-3 shadow-2xs"

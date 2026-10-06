@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React, { useState, useRef } from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, act, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { User } from "firebase/auth";
 import * as authProviderModule from "@/components/auth/AuthProvider";
@@ -241,13 +241,13 @@ describe("Phase 8c: Auth Modal & Complete Sign-Out Reset", () => {
 
       const { rerender } = render(<TestResultsWithAuth currentUser={userA} />);
 
-      // Mutate certaintyAfter to trigger debounced update (1000ms)
+      // Mutate personalNotes to trigger debounced update (1000ms)
       const nextTab = screen.getByRole("tab", { name: /next steps/i });
       act(() => {
         nextTab.click();
       });
-      const radios = screen.getAllByRole("radio");
-      radios[4].click(); // click star 5
+      const notesTextarea = screen.getByRole("textbox");
+      fireEvent.change(notesTextarea, { target: { value: "Updated personal thoughts and priorities." } });
 
       // Before timer fires, cancel all pending write timers (as sign-out does)
       clientStateModule.cancelPendingWriteTimers();

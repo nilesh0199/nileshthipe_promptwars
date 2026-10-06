@@ -126,7 +126,7 @@ describe("Type Picker & Workspace Interview Flow", () => {
     expect(screen.getByText(/Add a sentence or two to continue\./i)).toBeInTheDocument();
   });
 
-  it("allows skipping optional context and certainty screens", async () => {
+  it("allows skipping optional context screen to proceed directly to analysis", async () => {
     vi.useFakeTimers();
     renderWorkspace();
 
@@ -148,16 +148,12 @@ describe("Type Picker & Workspace Interview Flow", () => {
     await user.type(reasonsInput, "Good compensation and team.");
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
-    // Screen 4: Context is optional -> Skip button present
+    // Screen 4: Context is optional -> Skip button present and primary action is submit
     expect(screen.getByRole("heading", { name: /anything else that matters\?/i })).toBeInTheDocument();
     const skipContextBtn = screen.getByRole("button", { name: /skip/i });
     expect(skipContextBtn).toBeInTheDocument();
-    await user.click(skipContextBtn);
-
-    // Screen 5: Certainty rating is optional -> Skip button present
-    expect(screen.getByRole("heading", { name: /how sure do you feel right now\?/i })).toBeInTheDocument();
-    const skipCertaintyBtn = screen.getByRole("button", { name: /skip/i });
-    expect(skipCertaintyBtn).toBeInTheDocument();
+    const submitBtn = screen.getByRole("button", { name: /show me another perspective/i });
+    expect(submitBtn).toBeInTheDocument();
   });
 
   it("sends payload to /api/analyze with decisionType, decision, reasons, context, and NEVER certaintyBefore", async () => {
@@ -195,16 +191,11 @@ describe("Type Picker & Workspace Interview Flow", () => {
     // Use example button to quickly fill valid state
     await user.click(screen.getByRole("button", { name: /use an example/i }));
 
-    // Advance from decision, reasons, context
+    // Advance from decision and reasons
     await user.click(screen.getByRole("button", { name: /^continue$/i })); // from decision
     await user.click(screen.getByRole("button", { name: /^continue$/i })); // from reasons
-    await user.click(screen.getByRole("button", { name: /^continue$/i })); // from context
 
-    // Pick a certainty rating of 4
-    const radio4 = screen.getByRole("radio", { name: "4" });
-    await user.click(radio4);
-
-    // Submit for analysis
+    // Context screen: submit directly for analysis
     await user.click(screen.getByRole("button", { name: /show me another perspective/i }));
 
     expect(fetchSpy).toHaveBeenCalledWith(
@@ -242,10 +233,9 @@ describe("Type Picker & Workspace Interview Flow", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: /use an example/i }));
-    await user.click(screen.getByRole("button", { name: /^continue$/i }));
-    await user.click(screen.getByRole("button", { name: /^continue$/i }));
-    await user.click(screen.getByRole("button", { name: /^continue$/i }));
-    await user.click(screen.getByRole("button", { name: /show me another perspective/i }));
+    await user.click(screen.getByRole("button", { name: /^continue$/i })); // decision
+    await user.click(screen.getByRole("button", { name: /^continue$/i })); // reasons
+    await user.click(screen.getByRole("button", { name: /show me another perspective/i })); // context submit
 
     // Support card should appear
     expect(await screen.findByText(/Support and Resources/i)).toBeInTheDocument();

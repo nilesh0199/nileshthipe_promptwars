@@ -84,7 +84,7 @@ export function ResultsView({
 
   const [activeTab, setActiveTab] = useState<TabId>("findings");
   const [triageMap, setTriageMap] = useState<Record<string, TriageChoice>>(initialTriage || {});
-  const [certaintyAfter, setCertaintyAfter] = useState<number | null>(
+  const [certaintyAfter] = useState<number | null>(
     initialCertaintyAfter !== undefined ? initialCertaintyAfter : null
   );
   const [personalNotes, setPersonalNotes] = useState<string>(initialNotes || "");
@@ -430,21 +430,33 @@ export function ResultsView({
             Findings
           </h2>
           {activeTab === "findings" && (
-            <FindingsTab
-              findings={analysis.findings}
-              triageMap={triageMap}
-              onSetTriage={handleSetTriage}
-              onNavigateToWords={handleNavigateToWords}
-              highlightedFindingId={highlightedFindingId}
-              expandedMap={expandedMap}
-              onToggleExpand={handleToggleExpand}
-              onExpandAll={handleExpandAll}
-              onCollapseAll={handleCollapseAll}
-              selectedFilter={selectedFilter}
-              onSelectFilter={setSelectedFilter}
-              onNextUntriaged={handleNextUntriaged}
-              allTriaged={allTriaged}
-            />
+            <>
+              <FindingsTab
+                findings={analysis.findings}
+                triageMap={triageMap}
+                onSetTriage={handleSetTriage}
+                onNavigateToWords={handleNavigateToWords}
+                highlightedFindingId={highlightedFindingId}
+                expandedMap={expandedMap}
+                onToggleExpand={handleToggleExpand}
+                onExpandAll={handleExpandAll}
+                onCollapseAll={handleCollapseAll}
+                selectedFilter={selectedFilter}
+                onSelectFilter={setSelectedFilter}
+                onNextUntriaged={handleNextUntriaged}
+                allTriaged={allTriaged}
+              />
+              <div className="pt-8 pb-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchTab("words")}
+                  className="min-h-[48px] px-6 py-2.5 rounded-xl font-semibold text-[15px] sm:text-[16px] bg-[#18263e] text-[#faf8f5] hover:bg-[#233554] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] cursor-pointer shadow-2xs flex items-center gap-2"
+                >
+                  <span>Next: Your words</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </button>
+              </div>
+            </>
           )}
         </div>
 
@@ -461,14 +473,34 @@ export function ResultsView({
             Your words
           </h2>
           {activeTab === "words" && (
-            <InYourWordsTab
-              decision={originalInput.decision}
-              reasons={originalInput.reasons}
-              context={originalInput.context}
-              findings={analysis.findings}
-              onNavigateToFinding={handleNavigateToFinding}
-              selectedFindingId={highlightedFindingId}
-            />
+            <>
+              <InYourWordsTab
+                decision={originalInput.decision}
+                reasons={originalInput.reasons}
+                context={originalInput.context}
+                findings={analysis.findings}
+                onNavigateToFinding={handleNavigateToFinding}
+                selectedFindingId={highlightedFindingId}
+              />
+              <div className="pt-8 pb-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#dbd4c7]">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchTab("findings")}
+                  className="min-h-[48px] px-5 py-2.5 rounded-xl text-[15px] font-medium text-[#4e5e77] hover:text-[#18263e] hover:bg-[#f3ede2]/60 transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer flex items-center gap-1.5"
+                >
+                  <span aria-hidden="true">&larr;</span>
+                  <span>Previous: Findings</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchTab("premortem")}
+                  className="min-h-[48px] px-6 py-2.5 rounded-xl font-semibold text-[15px] sm:text-[16px] bg-[#18263e] text-[#faf8f5] hover:bg-[#233554] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] cursor-pointer shadow-2xs flex items-center gap-2"
+                >
+                  <span>Next: Premortem</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </button>
+              </div>
+            </>
           )}
         </div>
 
@@ -485,10 +517,30 @@ export function ResultsView({
             Premortem
           </h2>
           {activeTab === "premortem" && (
-            <PremortemTab
-              premortemQuestions={analysis.premortem_questions}
-              reasoningMap={analysis.reasoning_map}
-            />
+            <>
+              <PremortemTab
+                premortemQuestions={analysis.premortem_questions}
+                reasoningMap={analysis.reasoning_map}
+              />
+              <div className="pt-8 pb-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#dbd4c7]">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchTab("words")}
+                  className="min-h-[48px] px-5 py-2.5 rounded-xl text-[15px] font-medium text-[#4e5e77] hover:text-[#18263e] hover:bg-[#f3ede2]/60 transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer flex items-center gap-1.5"
+                >
+                  <span aria-hidden="true">&larr;</span>
+                  <span>Previous: Your words</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchTab("next")}
+                  className="min-h-[48px] px-6 py-2.5 rounded-xl font-semibold text-[15px] sm:text-[16px] bg-[#18263e] text-[#faf8f5] hover:bg-[#233554] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] cursor-pointer shadow-2xs flex items-center gap-2"
+                >
+                  <span>Next: Next steps</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </button>
+              </div>
+            </>
           )}
         </div>
 
@@ -505,21 +557,38 @@ export function ResultsView({
             Next steps
           </h2>
           {activeTab === "next" && (
-            <NextStepsTab
-              decisionSummary={analysis.decision_summary}
-              closingNote={analysis.closing_note}
-              findings={analysis.findings}
-              triageMap={triageMap}
-              onSwitchToFindings={() => handleSwitchTab("findings")}
-              certaintyBefore={originalInput.certaintyBefore}
-              certaintyAfter={certaintyAfter}
-              onSetCertaintyAfter={setCertaintyAfter}
-              personalNotes={personalNotes}
-              onChangePersonalNotes={setPersonalNotes}
-              savedDocId={savedDocId}
-              saveStatus={saveStatus}
-              onSave={handleSave}
-            />
+            <>
+              <NextStepsTab
+                decisionSummary={analysis.decision_summary}
+                closingNote={analysis.closing_note}
+                findings={analysis.findings}
+                triageMap={triageMap}
+                onSwitchToFindings={() => handleSwitchTab("findings")}
+                personalNotes={personalNotes}
+                onChangePersonalNotes={setPersonalNotes}
+                savedDocId={savedDocId}
+                saveStatus={saveStatus}
+                onSave={handleSave}
+              />
+              <div className="pt-8 pb-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#dbd4c7]">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchTab("premortem")}
+                  className="min-h-[48px] px-5 py-2.5 rounded-xl text-[15px] font-medium text-[#4e5e77] hover:text-[#18263e] hover:bg-[#f3ede2]/60 transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer flex items-center gap-1.5"
+                >
+                  <span aria-hidden="true">&larr;</span>
+                  <span>Previous: Premortem</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchTab("findings")}
+                  className="min-h-[48px] px-5 py-2.5 rounded-xl text-[15px] font-medium text-[#18263e] hover:bg-[#f3ede2]/60 transition-colors focus-visible:outline-2 focus-visible:outline-[#18263e] cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>Back to Findings</span>
+                  <span aria-hidden="true">&uarr;</span>
+                </button>
+              </div>
+            </>
           )}
         </div>
       </main>

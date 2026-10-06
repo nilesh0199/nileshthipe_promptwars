@@ -198,3 +198,15 @@ D9: Single main branch. Solo, short competition. Work is committed by the develo
   2. Desktop results tab bar: Position with `sticky top-16 z-20 bg-[#faf8f5]` and 1px bottom border, seamlessly meeting the header bottom border with zero gap and zero overlap at all desktop resolutions.
   3. Fallback model examples: Replace specific model examples with `your-fallback-model-id` and comment `use a stable model ID listed in Google AI Studio` in `.env.example` and `README.md`. No specific model name is hard-coded as a default in fallback code.
 - **Consequence:** Clean, calm editorial reading experience without text bleeding on scroll, reliable desktop tab positioning, and clear model configuration instructions.
+
+## D39: Removal of 1–5 certainty rating scale; prominent landing CTA ('Examine my decision'); end-of-tab sequential navigation
+- **Context:**
+  1. The 1–5 confidence rating was asked before analysis (`certaintyBefore`) and again after analysis (`certaintyAfter`). The before-rating was never used as input to Gemini (and strictly rejected at the API boundary), serving solely to compute an "Earlier: X / 5" badge. In practice, the post-analysis prompt was easily overlooked in the final tab, added unnecessary friction, and did not contribute to analytical inquiry.
+  2. The landing page CTA "Start exploring" sounded passive and did not clearly convey the tool's core purpose of examining an impending decision.
+  3. On the results page, users had to scroll back up to the top tab bar to advance to the next section after finishing reading a tab's content.
+- **Decision:**
+  1. Primary CTA: Renamed to "Examine my decision" with larger, bolder typography and generous touch target size (52–56px height, `text-[18px] sm:text-[20px] font-bold`), immediately drawing focus.
+  2. Streamlined interview flow: Removed the 5th certainty screen from `WORKSPACE_SCREENS`. The interview now consists of 4 focused screens (Decision area, Stated decision, Drawing reasons, Additional context). On the context screen, "Show me another perspective" triggers analysis directly, and "Skip" allows proceeding without optional context.
+  3. Removed certainty rating from results: Removed the 1–5 slider and "Before analysis" badge from `NextStepsTab`. Retained the prioritized investigation checklist, personal reflections textarea, and note export.
+  4. End-of-tab sequential navigation: Added prominent forward navigation buttons at the bottom of each tab panel (Findings &rarr; Your words &rarr; Premortem &rarr; Next steps) and previous navigation buttons, smoothly scrolling to top and focusing headings on change.
+- **Consequence:** Faster path from prompt to analysis, zero artificial metric distractions, improved reading ergonomics on long findings pages, and clear call-to-action on the landing screen.

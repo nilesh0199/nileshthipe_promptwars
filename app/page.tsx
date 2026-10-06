@@ -77,10 +77,10 @@ export default function HomePage() {
             <button
               type="button"
               onClick={goToWorkspace}
-              className="min-h-[44px] px-6 py-2.5 rounded-xl font-medium text-base sm:text-[17px] bg-[#18263e] text-[#faf8f5] hover:bg-[#233554] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] shadow-xs cursor-pointer inline-flex items-center gap-2"
+              className="min-h-[52px] sm:min-h-[56px] px-7 sm:px-8 py-3.5 rounded-2xl font-bold text-[18px] sm:text-[20px] bg-[#18263e] text-[#faf8f5] hover:bg-[#233554] transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18263e] shadow-xs cursor-pointer inline-flex items-center gap-2.5"
             >
-              <span>Start exploring</span>
-              <span aria-hidden="true" className="text-base font-bold">
+              <span>Examine my decision</span>
+              <span aria-hidden="true" className="text-lg sm:text-xl font-bold">
                 &rarr;
               </span>
             </button>

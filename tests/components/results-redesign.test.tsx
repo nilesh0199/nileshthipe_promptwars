@@ -134,12 +134,11 @@ describe("Phase 9: Results Redesign & Reliability Integration", () => {
       // Click "Use an example" to quickly fill state and jump to decision screen
       await user.click(screen.getByRole("button", { name: /use an example/i }));
 
-      // Advance through decision, reasons, context
+      // Advance through decision and reasons
       await user.click(screen.getByRole("button", { name: /^continue$/i })); // decision
       await user.click(screen.getByRole("button", { name: /^continue$/i })); // reasons
-      await user.click(screen.getByRole("button", { name: /^continue$/i })); // context
 
-      // Certainty rating screen
+      // Context screen: submit button
       const submitBtn = screen.getByRole("button", { name: /show me another perspective/i });
 
       // Rapidly fire two clicks on the submit button
@@ -466,6 +465,86 @@ describe("Phase 9: Results Redesign & Reliability Integration", () => {
       expect(await screen.findByRole("region", { name: /manual copy area/i })).toBeInTheDocument();
       expect(screen.getByText(/couldn't copy automatically/i)).toBeInTheDocument();
       expect(screen.getByDisplayValue(/Perspectra: my notes/)).toBeInTheDocument();
+    });
+  });
+
+  describe("End-of-Tab Sequential Navigation & Certainty Scale Removal", () => {
+    it("allows user to navigate through all tabs using bottom next and previous buttons", async () => {
+      render(
+        <ResultsView
+          data={mockSampleData}
+          originalInput={mockOriginalInput}
+          onBackToAnswers={vi.fn()}
+          onStartOver={vi.fn()}
+        />
+      );
+
+      // Start on Findings tab
+      expect(screen.getByRole("tabpanel", { name: /findings/i })).not.toHaveAttribute("hidden");
+
+      // 1. Findings -> Next: Your words
+      const nextToWordsBtn = screen.getByRole("button", { name: /next: your words/i });
+      fireEvent.click(nextToWordsBtn);
+      expect(screen.getByRole("tabpanel", { name: /your words/i })).not.toHaveAttribute("hidden");
+
+      // 2. Words -> Previous: Findings
+      const backToFindingsBtn = screen.getByRole("button", { name: /previous: findings/i });
+      fireEvent.click(backToFindingsBtn);
+      expect(screen.getByRole("tabpanel", { name: /findings/i })).not.toHaveAttribute("hidden");
+
+      // Jump back to Words
+      fireEvent.click(screen.getByRole("button", { name: /next: your words/i }));
+
+      // 3. Words -> Next: Premortem
+      const nextToPremortemBtn = screen.getByRole("button", { name: /next: premortem/i });
+      fireEvent.click(nextToPremortemBtn);
+      expect(screen.getByRole("tabpanel", { name: /premortem/i })).not.toHaveAttribute("hidden");
+
+      // 4. Premortem -> Previous: Your words
+      const backToWordsBtn = screen.getByRole("button", { name: /previous: your words/i });
+      fireEvent.click(backToWordsBtn);
+      expect(screen.getByRole("tabpanel", { name: /your words/i })).not.toHaveAttribute("hidden");
+
+      // Forward to Premortem again
+      fireEvent.click(screen.getByRole("button", { name: /next: premortem/i }));
+
+      // 5. Premortem -> Next: Next steps
+      const nextToStepsBtn = screen.getByRole("button", { name: /next: next steps/i });
+      fireEvent.click(nextToStepsBtn);
+      expect(screen.getByRole("tabpanel", { name: /next steps/i })).not.toHaveAttribute("hidden");
+
+      // 6. Next steps -> Previous: Premortem
+      const backToPremortemBtn = screen.getByRole("button", { name: /previous: premortem/i });
+      fireEvent.click(backToPremortemBtn);
+      expect(screen.getByRole("tabpanel", { name: /premortem/i })).not.toHaveAttribute("hidden");
+
+      // Forward to Next steps again
+      fireEvent.click(screen.getByRole("button", { name: /next: next steps/i }));
+
+      // 7. Next steps -> Back to Findings
+      const returnToFindingsBtn = screen.getByRole("button", { name: /back to findings/i });
+      fireEvent.click(returnToFindingsBtn);
+      expect(screen.getByRole("tabpanel", { name: /findings/i })).not.toHaveAttribute("hidden");
+    });
+
+    it("verifies 1-5 certainty rating scale is absent from Next steps tab", () => {
+      render(
+        <ResultsView
+          data={mockSampleData}
+          originalInput={mockOriginalInput}
+          onBackToAnswers={vi.fn()}
+          onStartOver={vi.fn()}
+        />
+      );
+
+      // Navigate to Next steps tab
+      const nextTab = screen.getByRole("tab", { name: /next steps/i });
+      fireEvent.click(nextTab);
+
+      // The 1-5 certainty rating section should not exist
+      expect(screen.queryByRole("heading", { name: /how sure do you feel now\?/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("radiogroup", { name: /certainty rating after analysis/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/before analysis:/i)).not.toBeInTheDocument();
     });
   });
 });

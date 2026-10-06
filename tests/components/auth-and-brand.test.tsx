@@ -7,6 +7,7 @@ import { SignInModal } from "@/components/auth/SignInModal";
 import { Header } from "@/components/Header";
 import { ViewProvider, useView } from "@/components/navigation/ViewContext";
 import * as authProviderModule from "@/components/auth/AuthProvider";
+import HomePage from "@/app/page";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -179,5 +180,27 @@ describe("SignInModal & Brand Link", () => {
     expect(header?.className).toContain("border-b");
     expect(header?.className).not.toContain("backdrop-blur");
     expect(header?.className).not.toContain("/90");
+  });
+
+  it("renders prominent 'Examine my decision' primary CTA button on landing page and navigates to workspace", async () => {
+    window.sessionStorage.clear();
+    render(
+      <authProviderModule.AuthProvider>
+        <ViewProvider>
+          <HomePage />
+        </ViewProvider>
+      </authProviderModule.AuthProvider>
+    );
+
+    const ctaBtn = screen.getByRole("button", { name: /examine my decision/i });
+    expect(ctaBtn).toBeInTheDocument();
+    expect(ctaBtn.className).toContain("min-h-[52px]");
+    expect(ctaBtn.className).toContain("font-bold");
+
+    const user = userEvent.setup();
+    await user.click(ctaBtn);
+
+    // After clicking, workspace view is displayed
+    expect(await screen.findByRole("heading", { name: /what kind of decision is this\?/i })).toBeInTheDocument();
   });
 });

@@ -125,7 +125,6 @@ export function Workspace({ onExit }: WorkspaceProps) {
   const [loadingStep, setLoadingStep] = useState<number>(0);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const radioRefs = useRef<(HTMLInputElement | null)[]>([]);
   const startOverTriggerRef = useRef<HTMLButtonElement>(null);
   const startOverConfirmRef = useRef<HTMLButtonElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -213,28 +212,6 @@ export function Workspace({ onExit }: WorkspaceProps) {
       ...prev,
       [field]: value,
     }));
-  };
-
-  const updateCertainty = (val: number) => {
-    setErrorMsg(null);
-    setFormData((prev) => ({
-      ...prev,
-      certaintyBefore: val,
-    }));
-  };
-
-  const handleRadioKeyDown = (e: KeyboardEvent<HTMLInputElement>, level: number) => {
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-      e.preventDefault();
-      const next = level < 5 ? level + 1 : 1;
-      updateCertainty(next);
-      radioRefs.current[next - 1]?.focus();
-    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-      e.preventDefault();
-      const prev = level > 1 ? level - 1 : 5;
-      updateCertainty(prev);
-      radioRefs.current[prev - 1]?.focus();
-    }
   };
 
   const goToScreen = (newIndex: number, currentType: DecisionTypeId | null = formData.decisionType) => {
@@ -1038,55 +1015,6 @@ export function Workspace({ onExit }: WorkspaceProps) {
                         </span>
                       </div>
                     </div>
-                  )}
-
-                  {/* SCREEN 5: CERTAINTY */}
-                  {currentScreen.id === "certainty" && (
-                    <fieldset className="space-y-3">
-                      <legend className="sr-only">How sure do you feel right now?</legend>
-
-                      <div
-                        className="grid grid-cols-5 gap-2.5 sm:gap-3.5 w-full"
-                        role="radiogroup"
-                      >
-                        {[1, 2, 3, 4, 5].map((level, idx) => {
-                          const isChecked = formData.certaintyBefore === level;
-                          const radioId = `certainty-val-${level}`;
-
-                          return (
-                            <label
-                              key={level}
-                              htmlFor={radioId}
-                              className={`min-h-[64px] flex flex-col items-center justify-center rounded-xl border text-xl font-bold transition-colors cursor-pointer select-none focus-within:ring-2 focus-within:ring-[#18263e] focus-within:ring-offset-2 ${
-                                isChecked
-                                  ? "bg-[#18263e] text-[#faf8f5] border-[#18263e] shadow-xs"
-                                  : "bg-[#ffffff] text-[#18263e] border-[#dbd4c7] hover:border-[#b46b19] hover:bg-[#faf8f5]"
-                              }`}
-                            >
-                              <input
-                                ref={(el) => {
-                                  radioRefs.current[idx] = el;
-                                }}
-                                type="radio"
-                                id={radioId}
-                                name="certaintyBefore"
-                                value={level}
-                                checked={isChecked}
-                                onChange={() => updateCertainty(level)}
-                                onKeyDown={(e) => handleRadioKeyDown(e, level)}
-                                className="sr-only"
-                              />
-                              <span>{level}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-
-                      <div className="flex justify-between items-center text-[15px] text-[#6c7c94] px-1">
-                        <span>Not at all sure</span>
-                        <span>Very sure</span>
-                      </div>
-                    </fieldset>
                   )}
 
                   {/* Validation Error Message */}
